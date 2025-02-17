@@ -1,6 +1,6 @@
 NAME = cub3D
 CC = cc
-CFLAGS = -Wall -Wextra -Werror -DGL_SILENCE_DEPRECATION
+CFLAGS = -Wall -Wextra -Werror
 MLX_FLAGS = -L./minilibx_opengl_20191021 -lmlx
 LIBFT_FLAGS = -L libft -lft
 

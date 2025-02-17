@@ -1,5 +1,7 @@
 {
     "files.associations": {
         "struct.h": "c"
-    }
+    },
+    "42header.username": "iunikel",
+    "42header.email": "marvin@student.42.fr"
 }
