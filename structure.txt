@@ -22,8 +22,8 @@ cub3D/
 │   │   └── map_parser.c     # Map array parsing
 │   │
 │   ├── raycast/
-│   │   ├── raycast.c        # Main raycasting logic
-│   │   ├── ray_utils.c      # Ray calculations
+│   │   ├── raycast.c       # Main raycasting logic
+│   │   ├── ray_utils.c     # Ray calculations
 │   │   ├── dda.c           # DDA algorithm implementation
 │   │   ├── wall_casting.c  # Wall height calculations
 │   │   └── texture_cast.c  # Texture mapping calculations

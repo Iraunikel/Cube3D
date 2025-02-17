@@ -94,3 +94,11 @@ Collision Detection
  // Collision checking
 int check_collision(t_player *player, t_map *map, double new_x, double new_y)
 int is_wall(t_map *map, int x, int y)
+
+Additional Rules:
+Each function cannot be more than 25 lines
+For loops are forbidden, use while instead
+Only external functions allowed:
+• open, close, read, write, printf, malloc, free, perror, strerror, exit, gettimeofday
+• All functions of the math library (-lm man man 3 math)
+• All functions of the MinilibX
