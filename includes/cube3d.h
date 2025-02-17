@@ -3,6 +3,20 @@
 #include "../libft/libft.h"
 #include <../minilibx_opengl_20191021/mlx.h>
 #include <stdio.h>
+#include <math.h>
+
+// Key codes for MacOS
+# define KEY_ESC 53
+# define KEY_W 13
+# define KEY_A 0
+# define KEY_S 1
+# define KEY_D 2
+# define KEY_LEFT 123
+# define KEY_RIGHT 124
+
+// Movement constants
+# define MOVE_SPEED 0.1
+# define ROT_SPEED 0.1
 
 typedef struct s_color
 {
@@ -22,8 +36,18 @@ typedef struct s_texture
 
 typedef struct s_player
 {
-    double x;
-    double y;
+    double  x;
+    double  y;
+    double  dir_x;     // Direction vector X (where player is looking)
+    double  dir_y;     // Direction vector Y
+    double  plane_x;   // Camera plane X (for FOV)
+    double  plane_y;   // Camera plane Y
+    int     move_w;    // Movement flags
+    int     move_s;
+    int     move_a;
+    int     move_d;
+    int     rot_left;
+    int     rot_right;
 } t_player;
 
 typedef struct s_map
@@ -66,5 +90,11 @@ int     parse_map_file(const char *filename, t_game *game);
 void    cleanup_game(t_game *game);
 void    print_game_state(t_game *game);
 char    *get_next_line(int fd);
+
+// New movement prototypes
+int     key_press(int keycode, t_game *game);
+int     key_release(int keycode, t_game *game);
+int     game_loop(t_game *game);
+void    move_player(t_game *game);
 
 #endif

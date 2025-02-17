@@ -30,7 +30,8 @@ static char	*resize_buffer(char *line, size_t *size, size_t i)
 static char	*process_line(char *line, char *buf, size_t *idx, size_t *i,
 		size_t *size, size_t *bytes_read)
 {
-	while (*i < *size - 1)
+	(void)bytes_read;
+    while (*i < *size - 1)
 	{
 		line[(*i)++] = buf[(*idx)++];
 		if (line[*i - 1] == '\n')
