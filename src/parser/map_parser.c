@@ -131,15 +131,16 @@ static int parse_map_content(t_game *game, char **lines, int start_line)
 
 static char **read_file_contents(int fd)
 {
-    char    *line = NULL;
+    char    *line;
     char    **contents;
     int     line_count;
     int     i;
 
     // First count the lines
     line_count = 0;
-    while (get_next_line(fd) > 0)
+    while ((line = get_next_line(fd)) != NULL)
     {
+        free(line);
         line_count++;
     }
     
@@ -152,7 +153,7 @@ static char **read_file_contents(int fd)
     // Reset file position and read lines
     lseek(fd, 0, SEEK_SET);
     i = 0;
-    while (get_next_line(fd) > 0)
+    while ((line = get_next_line(fd)) != NULL)
     {
         contents[i] = line;
         i++;
