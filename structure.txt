@@ -49,9 +49,25 @@ cub3D/
 │       ├── color_utils.c  # Color manipulation
 │       └── error_utils.c  # Error handling
 │
-└── maps/
-    ├── test_map.cub
-    └── valid_maps/
-        ├── basic.cub
-        ├── complex.cub
-        └── minimal.cub
+├── textures/              # Added textures folder
+│   ├── wall_north.xpm    # 64x64 XPM texture file
+│   ├── wall_south.xpm    # 64x64 XPM texture file
+│   ├── wall_west.xpm     # 64x64 XPM texture file
+│   └── wall_east.xpm     # 64x64 XPM texture file
+│
+├── maps/
+│   ├── test.cub          # Basic test map
+│   ├── error_maps/       # Added error maps folder
+│   │   ├── missing_texture.cub
+│   │   ├── invalid_color.cub
+│   │   ├── no_player.cub
+│   │   ├── multiple_players.cub
+│   │   └── unclosed_map.cub
+│   │
+│   └── valid_maps/
+│       ├── minimal.cub    # Smallest possible valid map
+│       ├── basic.cub      # Simple rectangular map
+│       └── complex.cub    # Larger map with multiple rooms
+│
+└── tests/                 # Optional: test files
+    └── map_tests/        # Map parsing test files

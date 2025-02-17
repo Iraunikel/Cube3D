@@ -2,6 +2,7 @@
 #define STRUCT_H
 #include "../libft/libft.h"
 #include <../minilibx_opengl_20191021/mlx.h>
+#include <stdio.h>
 
 typedef struct s_color
 {
@@ -63,7 +64,7 @@ int     validate_file_extension(const char *filename);
 int     init_game(t_game *game);
 int     parse_map_file(const char *filename, t_game *game);
 void    cleanup_game(t_game *game);
-//void    game_loop(t_game *game);
+void    print_game_state(t_game *game);
 char    *get_next_line(int fd);
 
 #endif

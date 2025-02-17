@@ -14,7 +14,8 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/parser/file_reader.c \
        $(SRC_DIR)/parser/map_parser.c \
        $(SRC_DIR)/events/exit_handler.c \
-       $(SRC_DIR)/utils/get_next_line.c
+       $(SRC_DIR)/utils/get_next_line.c \
+       $(SRC_DIR)/utils/debug.c
 
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
