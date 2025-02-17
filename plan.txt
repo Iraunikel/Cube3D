@@ -1,0 +1,96 @@
+Project Infrastructure (Foundation)
+
+ // Main setup and initialization
+int main(int argc, char **argv)
+void init_game(t_game *game)
+void cleanup_game(t_game *game)
+
+// Basic structures
+typedef struct s_game {
+    void *mlx;
+    void *win;
+    t_map *map;
+    t_player *player;
+    t_texture *textures;
+    // Other game state
+} t_game;
+
+Map Parsing & Validation
+
+ // File reading and initial parsing
+int parse_map_file(char *filename, t_game *game)
+int validate_file_extension(char *filename)
+char **read_map_file(int fd)
+
+// Map validation
+int validate_map(t_map *map)
+int check_map_borders(t_map *map)
+int validate_map_characters(t_map *map)
+int check_player_position(t_map *map)
+
+// Configuration parsing
+int parse_textures(char *line, t_game *game)
+int parse_colors(char *line, t_game *game)
+
+Player & Camera Setup
+
+ // Player initialization and management
+void init_player(t_player *player, t_map *map)
+void set_player_position(t_player *player, int x, int y, char direction)
+
+// Camera calculations
+void calculate_camera_plane(t_player *player)
+void update_camera_direction(t_player *player, double rotation_speed)
+
+Raycasting Engine
+
+ // Core raycasting
+void cast_rays(t_game *game)
+void calculate_ray(t_ray *ray, t_player *player, int x)
+void perform_dda(t_ray *ray, t_map *map)
+
+// Wall rendering
+void calculate_wall_height(t_ray *ray)
+void draw_wall_strip(t_game *game, t_ray *ray, int x)
+void get_wall_texture(t_ray *ray, t_game *game)
+
+Texture Management
+
+ // Texture loading and handling
+int load_textures(t_game *game)
+void *load_texture(char *path, t_game *game)
+unsigned int get_texture_color(t_texture *texture, int x, int y)
+
+// Color handling
+int create_rgb(int r, int g, int b)
+void set_floor_ceiling_colors(t_game *game, int floor_color, int ceiling_color)
+
+Movement & Controls
+
+ // Event handling
+int handle_keypress(int keycode, t_game *game)
+int handle_keyrelease(int keycode, t_game *game)
+int handle_exit(t_game *game)
+
+// Movement calculations
+void move_forward(t_player *player, t_map *map)
+void move_backward(t_player *player, t_map *map)
+void strafe_left(t_player *player, t_map *map)
+void strafe_right(t_player *player, t_map *map)
+
+Rendering Engine
+
+ // Main rendering loop
+int game_loop(t_game *game)
+void render_frame(t_game *game)
+void clear_window(t_game *game)
+
+// Drawing utilities
+void draw_pixel(t_game *game, int x, int y, int color)
+void draw_vertical_line(t_game *game, int x, int y1, int y2, int color)
+
+Collision Detection
+
+ // Collision checking
+int check_collision(t_player *player, t_map *map, double new_x, double new_y)
+int is_wall(t_map *map, int x, int y)

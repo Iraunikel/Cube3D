@@ -1,0 +1,57 @@
+cub3D/
+├── Makefile
+├── includes/
+│   ├── cub3d.h           # Main header
+│   ├── structs.h         # All structure definitions
+│   ├── constants.h       # Define constants
+│   └── prototypes.h      # Function prototypes
+│
+├── src/
+│   ├── main.c            # Program entry point
+│   │
+│   ├── init/
+│   │   ├── init_game.c   # Game initialization
+│   │   ├── init_player.c # Player initialization
+│   │   └── init_mlx.c    # MLX initialization
+│   │
+│   ├── parser/
+│   │   ├── file_reader.c    # Reading .cub file
+│   │   ├── map_validator.c  # Map validation
+│   │   ├── texture_parser.c # Texture path parsing
+│   │   ├── color_parser.c   # RGB color parsing
+│   │   └── map_parser.c     # Map array parsing
+│   │
+│   ├── raycast/
+│   │   ├── raycast.c        # Main raycasting logic
+│   │   ├── ray_utils.c      # Ray calculations
+│   │   ├── dda.c           # DDA algorithm implementation
+│   │   ├── wall_casting.c  # Wall height calculations
+│   │   └── texture_cast.c  # Texture mapping calculations
+│   │
+│   ├── render/
+│   │   ├── render.c       # Main rendering loop
+│   │   ├── draw_walls.c   # Wall drawing
+│   │   ├── draw_utils.c   # Drawing utilities
+│   │   └── textures.c     # Texture handling
+│   │
+│   ├── movement/
+│   │   ├── player_move.c  # Forward/backward movement
+│   │   ├── player_rotate.c # Left/right rotation
+│   │   └── collisions.c   # Collision detection
+│   │
+│   ├── events/
+│   │   ├── key_handler.c  # Keyboard input handling
+│   │   └── exit_handler.c # Clean exit handling
+│   │
+│   └── utils/
+│       ├── memory_utils.c # Memory management
+│       ├── math_utils.c   # Mathematical calculations
+│       ├── color_utils.c  # Color manipulation
+│       └── error_utils.c  # Error handling
+│
+└── maps/
+    ├── test_map.cub
+    └── valid_maps/
+        ├── basic.cub
+        ├── complex.cub
+        └── minimal.cub

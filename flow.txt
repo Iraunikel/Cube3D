@@ -1,0 +1,12 @@
+Natural Development Flow:
+
+Start with basic project setup and window management
+Implement map parsing and validation
+Add basic player movement in 2D (for testing)
+Implement basic raycasting without textures
+Add wall rendering with solid colors
+Implement texture loading and mapping
+Add proper collision detection
+Implement smooth movement and rotation
+Add floor/ceiling colors
+Polish rendering and optimize performance
