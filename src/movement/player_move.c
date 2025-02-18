@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   player_move.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: your_login <your_login@student.42.fr>      +#+  +:+       +#+        */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/xx/xx xx:xx:xx by your_login       #+#    #+#             */
-/*   Updated: 2024/xx/xx xx:xx:xx by your_login      ###   ########.fr       */
+/*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/18 15:56:20 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 

@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/17 22:51:46 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/18 15:52:27 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -110,6 +110,51 @@ static void	draw_map(t_game *game)
 	draw_player(game);
 }
 
+static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
+{
+	double  delta_x;
+	double  delta_y;
+	double  step;
+	double  x;
+	double  y;
+	int     i;
+
+	delta_x = x2 - x1;
+	delta_y = y2 - y1;
+	step = fabs(delta_x) > fabs(delta_y) ? fabs(delta_x) : fabs(delta_y);
+	delta_x /= step;
+	delta_y /= step;
+	x = x1;
+	y = y1;
+	i = 0;
+	while (i <= step)
+	{
+		my_mlx_pixel_put(game, (int)x, (int)y, color);
+		x += delta_x;
+		y += delta_y;
+		i++;
+	}
+}
+
+void	draw_ray_2d(t_game *game, t_ray *ray)
+{
+	int size;
+	int start_x;
+	int start_y;
+	int end_x;
+	int end_y;
+
+	size = 50;  // Same as in draw_square
+	
+	// Convert world coordinates to screen coordinates
+	start_x = ray->pos_x * size + (WINDOW_WIDTH - (game->map.width * size)) / 2;
+	start_y = ray->pos_y * size + (WINDOW_HEIGHT - (game->map.height * size)) / 2;
+	end_x = start_x + (ray->dir_x * size);
+	end_y = start_y + (ray->dir_y * size);
+	
+	draw_line(game, start_x, start_y, end_x, end_y, 0x0000FF);  // Blue for rays
+}
+
 int	game_loop(t_game *game)
 {
 	// Update player position based on movement flags
@@ -117,6 +162,9 @@ int	game_loop(t_game *game)
 
 	// Draw 2D map
 	draw_map(game);
+
+	// Cast rays
+	cast_rays(game);
 
 	// Update screen
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);

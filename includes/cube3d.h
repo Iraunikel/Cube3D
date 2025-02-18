@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <math.h>
 
+// Window dimensions
+# define WINDOW_WIDTH 1000
+# define WINDOW_HEIGHT 1000
+
 // Key codes for MacOS
 # define KEY_ESC 53
 # define KEY_W 13
@@ -13,9 +17,11 @@
 # define KEY_D 2
 # define KEY_LEFT 123
 # define KEY_RIGHT 124
+# define KEY_UP 126
+# define KEY_DOWN 125
 
 // Movement constants
-# define MOVE_SPEED 0.1
+# define MOVE_SPEED 0.3
 # define ROT_SPEED 0.1
 
 typedef struct s_color
@@ -59,8 +65,21 @@ typedef struct s_map
 
 typedef struct s_ray
 {
-    double x;
-    double y;
+    double  pos_x;      // Ray position X
+    double  pos_y;      // Ray position Y
+    double  dir_x;      // Ray direction X
+    double  dir_y;      // Ray direction Y
+    double  delta_dist_x;   // Length of ray from one x-side to next
+    double  delta_dist_y;   // Length of ray from one y-side to next
+    int     map_x;      // Which box of the map we're in
+    int     map_y;
+    double  side_dist_x;    // Length of ray from current pos to next x-side
+    double  side_dist_y;    // Length of ray from current pos to next y-side
+    int     step_x;     // What direction to step in x direction (+1 or -1)
+    int     step_y;     // What direction to step in y direction (+1 or -1)
+    int     hit;        // Was there a wall hit?
+    int     side;       // Was a NS or a EW wall hit?
+    double  perp_wall_dist; // Perpendicular wall distance
 } t_ray;
 
 typedef struct s_game
@@ -96,5 +115,10 @@ int     key_press(int keycode, t_game *game);
 int     key_release(int keycode, t_game *game);
 int     game_loop(t_game *game);
 void    move_player(t_game *game);
+
+// Raycasting functions
+void    calculate_ray_dir(t_ray *ray, t_player *player, double camera_x);
+void    cast_rays(t_game *game);
+void    draw_ray_2d(t_game *game, t_ray *ray);
 
 #endif

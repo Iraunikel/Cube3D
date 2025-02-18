@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:43:24 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/17 22:43:26 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/18 15:59:48 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,9 +19,9 @@ int	key_press(int keycode, t_game *game)
         cleanup_game(game);
         exit(0);
     }
-    if (keycode == KEY_W)
+    if (keycode == KEY_W || keycode == KEY_UP)
         game->player.move_w = 1;
-    if (keycode == KEY_S)
+    if (keycode == KEY_S || keycode == KEY_DOWN)
         game->player.move_s = 1;
     if (keycode == KEY_A)
         game->player.move_a = 1;
@@ -36,9 +36,9 @@ int	key_press(int keycode, t_game *game)
 
 int	key_release(int keycode, t_game *game)
 {
-    if (keycode == KEY_W)
+    if (keycode == KEY_W || keycode == KEY_UP)
         game->player.move_w = 0;
-    if (keycode == KEY_S)
+    if (keycode == KEY_S || keycode == KEY_DOWN)
         game->player.move_s = 0;
     if (keycode == KEY_A)
         game->player.move_a = 0;

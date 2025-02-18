@@ -1,7 +1,7 @@
 NAME = cub3D
 CC = cc
 CFLAGS = -Wall -Wextra -Werror
-MLX_FLAGS = -L./minilibx_opengl_20191021 -lmlx
+MLX_FLAGS = -L./minilibx_opengl_20191021 -lmlx -lm
 LIBFT_FLAGS = -L libft -lft
 
 SRC_DIR = src
@@ -17,6 +17,7 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/events/key_handler.c \
        $(SRC_DIR)/movement/player_move.c \
        $(SRC_DIR)/render/render.c \
+       $(SRC_DIR)/raycast/raycast.c \
        $(SRC_DIR)/utils/get_next_line.c \
        $(SRC_DIR)/utils/debug.c
 
