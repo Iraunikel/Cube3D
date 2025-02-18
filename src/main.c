@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:44 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/17 22:44:52 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/18 15:10:34 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,13 @@ static void	init_player_direction(t_game *game, char direction)
 		game->player.dir_x = -1;
 		game->player.plane_y = -0.66;
 	}
+}
+
+static int	close_window(t_game *game)
+{
+	cleanup_game(game);
+	exit(0);
+	return (0);
 }
 
 int	main(int argc, char **argv)
@@ -72,6 +79,7 @@ int	main(int argc, char **argv)
 	// Set up hooks
 	mlx_hook(game.win, 2, 1L << 0, key_press, &game);
 	mlx_hook(game.win, 3, 1L << 1, key_release, &game);
+	mlx_hook(game.win, 17, 0, close_window, &game);  // Window close button
 	mlx_loop_hook(game.mlx, game_loop, &game);
 	printf("Starting game loop...\n");
 	mlx_loop(game.mlx);

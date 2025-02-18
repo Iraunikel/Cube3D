@@ -91,7 +91,7 @@ void	move_player(t_game *game)
 
     // Rotation
     if (game->player.rot_left)
-        rotate_player(game, ROT_SPEED);
-    if (game->player.rot_right)
         rotate_player(game, -ROT_SPEED);
+    if (game->player.rot_right)
+        rotate_player(game, ROT_SPEED);
 } 
