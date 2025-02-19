@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 16:14:26 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 23:56:36 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ static void	my_mlx_pixel_put(t_game *game, int x, int y, int color)
 {
 	char	*dst;
 
-	if (x < 0 || x >= 1000 || y < 0 || y >= 1000)
+	if (x < 0 || x >= WINDOW_WIDTH || y < 0 || y >= WINDOW_HEIGHT)
 		return ;
 	dst = game->addr + (y * game->line_length + x * (game->bits_per_pixel / 8));
 	*(unsigned int *)dst = color;
@@ -105,8 +105,6 @@ static void	draw_map(t_game *game)
 	int	x;
 	int	y;
 
-	// Clear screen to dark gray
-	ft_bzero(game->addr, 1000 * 1000 * (game->bits_per_pixel / 8));
 	y = 0;
 	while (y < game->map.height)
 	{
@@ -208,44 +206,69 @@ static void	calculate_line_dimensions(t_ray *ray, int *line_height,
 		*draw_end = WINDOW_HEIGHT - 1;
 }
 
-static int	calculate_wall_color(t_ray *ray, double darkness)
+static t_texture *get_wall_texture(t_game *game, t_ray *ray)
 {
-	int	color;
-	int	r;
-	int	g;
-	int	b;
-
 	if (ray->side == 0)
-		color = 0xFFFFFF;
+	{
+		if (ray->dir_x > 0)
+			return (&game->textures[2]); // East texture
+		return (&game->textures[3]);     // West texture
+	}
+	if (ray->dir_y > 0)
+		return (&game->textures[1]);     // South texture
+	return (&game->textures[0]);         // North texture
+}
+
+static void calculate_wall_x(t_ray *ray, t_player *player)
+{
+	if (ray->side == 0)
+		ray->wall_x = player->y + ray->perp_wall_dist * ray->dir_y;
 	else
-		color = 0xCCCCCC;
-	if (ray->perp_wall_dist > 1.0)
-		darkness = 1.0 / ray->perp_wall_dist;
-	r = ((color >> 16) & 0xFF) * darkness;
-	g = ((color >> 8) & 0xFF) * darkness;
-	b = (color & 0xFF) * darkness;
-	return ((r << 16) | (g << 8) | b);
+		ray->wall_x = player->x + ray->perp_wall_dist * ray->dir_x;
+	ray->wall_x -= floor(ray->wall_x);
+}
+
+void	draw_textured_wall(t_game *game, t_ray *ray, int x)
+{
+	t_texture   *tex;
+	int         tex_x;
+	int         line_height;
+	int         draw_start;
+	int         draw_end;
+	int         y;
+	double      step;
+	double      tex_pos;
+
+	tex = get_wall_texture(game, ray);
+	calculate_wall_x(ray, &game->player);
+	tex_x = (int)(ray->wall_x * tex->width);
+	if ((ray->side == 0 && ray->dir_x > 0) ||
+		(ray->side == 1 && ray->dir_y < 0))
+		tex_x = tex->width - tex_x - 1;
+
+	calculate_line_dimensions(ray, &line_height, &draw_start, &draw_end);
+	step = 1.0 * tex->height / line_height;
+	tex_pos = (draw_start - WINDOW_HEIGHT / 2 + line_height / 2) * step;
+
+	y = draw_start;
+	while (y < draw_end)
+	{
+		int tex_y = (int)tex_pos & (tex->height - 1);
+		tex_pos += step;
+		unsigned int color = get_texture_color(tex, tex_x, tex_y);
+		if (ray->side == 1)
+			color = (color >> 1) & 8355711; // Make sides darker
+		my_mlx_pixel_put(game, x, y, color);
+		y++;
+	}
 }
 
 void	draw_3d_view(t_game *game, t_ray *ray, int x)
 {
-	int	line_height;
-	int	draw_start;
-	int	draw_end;
-	int	screen_x;
-	int	y;
-	int	color;
+	int screen_x;
 
 	screen_x = x + WINDOW_WIDTH / 2;
-	calculate_line_dimensions(ray, &line_height, &draw_start, &draw_end);
-	color = calculate_wall_color(ray, 1.0);
-	y = draw_start;
-	while (y <= draw_end)
-	{
-		if (y >= 0 && y < WINDOW_HEIGHT)
-			my_mlx_pixel_put(game, screen_x, y, color);
-		y++;
-	}
+	draw_textured_wall(game, ray, screen_x);
 }
 
 static void	draw_ceiling_floor(t_game *game)
@@ -254,11 +277,16 @@ static void	draw_ceiling_floor(t_game *game)
 	int	floor_color;
 	int	y;
 	int	x;
-	int	y;
-	int	x;
 
-	ceiling_color = game->ceiling_color.r << 16 | game->ceiling_color.g << 8 | game->ceiling_color.b;
-	floor_color = game->floor_color.r << 16 | game->floor_color.g << 8 | game->floor_color.b;
+	ceiling_color = (game->ceiling_color.r << 16) | (game->ceiling_color.g << 8) | game->ceiling_color.b;
+	floor_color = (game->floor_color.r << 16) | (game->floor_color.g << 8) | game->floor_color.b;
+	
+	printf("Debug - Colors:\n");
+	printf("Ceiling RGB: %d,%d,%d (hex: 0x%06X)\n", 
+		game->ceiling_color.r, game->ceiling_color.g, game->ceiling_color.b, ceiling_color);
+	printf("Floor RGB: %d,%d,%d (hex: 0x%06X)\n", 
+		game->floor_color.r, game->floor_color.g, game->floor_color.b, floor_color);
+
 	// Draw ceiling (top half)
 	y = 0;
 	while (y < WINDOW_HEIGHT / 2)
@@ -271,6 +299,7 @@ static void	draw_ceiling_floor(t_game *game)
 		}
 		y++;
 	}
+	
 	// Draw floor (bottom half)
 	y = WINDOW_HEIGHT / 2;
 	while (y < WINDOW_HEIGHT)
@@ -291,16 +320,19 @@ int	game_loop(t_game *game)
 	static clock_t	last_time = 0;
 	clock_t			current_time;
 
-	// Clear only necessary parts of the screen
-	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel
-			/ 8));
+	// Clear the entire screen
+	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel / 8));
+	
 	// Update player position
 	move_player(game);
+	
 	// Draw 3D view background first
 	draw_ceiling_floor(game);
+	
 	// Draw 2D map and cast rays
 	draw_map(game);
 	cast_rays(game);
+	
 	// FPS calculation (debug)
 	frame_count++;
 	current_time = clock();
@@ -310,6 +342,7 @@ int	game_loop(t_game *game)
 		frame_count = 0;
 		last_time = current_time;
 	}
+	
 	// Update screen
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
 	return (0);

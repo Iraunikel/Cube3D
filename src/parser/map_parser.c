@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 15:39:08 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 15:39:10 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 23:59:42 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,9 @@ static int parse_color(char *line, t_color *color)
     color->r = values[0];
     color->g = values[1];
     color->b = values[2];
+
+    printf("Debug - Parsed color: R(%d) G(%d) B(%d)\n", color->r, color->g, color->b);
+
     free_array(rgb);
     return (1);
 }

@@ -19,7 +19,9 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/render/render.c \
        $(SRC_DIR)/raycast/raycast.c \
        $(SRC_DIR)/utils/get_next_line.c \
-       $(SRC_DIR)/utils/debug.c
+       $(SRC_DIR)/utils/debug.c \
+       $(SRC_DIR)/utils/error.c \
+       $(SRC_DIR)/texture_loader.c
 
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 

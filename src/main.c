@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:44 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 15:37:12 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 23:49:46 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,6 +75,8 @@ static int	setup_game(t_game *game, char *map_file)
 		cleanup_game(game);
 		return (0);
 	}
+	printf("Map file parsed successfully. Loading textures...\n");
+	load_textures(game);
 	return (1);
 }
 

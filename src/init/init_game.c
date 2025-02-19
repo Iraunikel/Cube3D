@@ -41,7 +41,7 @@ static void init_map_and_player(t_game *game)
 static void init_colors_and_textures(t_game *game)
 {
     game->ceiling_color = (t_color){0, 0, 0};
-    game->floor_color = (t_color){128, 128, 128};
+    game->floor_color = (t_color){0, 0, 0};
     game->north_texture = NULL;
     game->south_texture = NULL;
     game->west_texture = NULL;

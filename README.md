@@ -25,7 +25,7 @@ Natural Development Flow:
         * Green direction indicator ✓
         * Blue FOV rays ✓
 
-[IN PROGRESS] Implement basic raycasting without textures
+[DONE] Implement basic raycasting without textures
     [DONE] Ray calculations
         * Ray structure defined ✓
         * Direction calculations implemented ✓
@@ -46,32 +46,33 @@ Natural Development Flow:
         * Performance optimization ✓
         * Fix visual artifacts ✓
 
-[TODO] Add wall rendering with solid colors
-    - Wall distance calculation
-    - Perspective correction
-    - Wall height based on distance
-
-[TODO] Implement texture loading and mapping
-    - Load XPM textures
-    - Calculate texture coordinates
-    - Apply textures to walls
+[IN PROGRESS] Implement texture loading and mapping
+    - Load XPM textures ✓
+    - Calculate texture coordinates ✓
+    - Apply textures to walls ✓
+    - Proper texture scaling and alignment [DOUBLE CHECK]
 
 [TODO] Add proper collision detection
     - Sliding along walls
     - Corner handling
     - Proper hitbox
+    - Wall distance buffer
 
 [TODO] Implement smooth movement and rotation
     - Frame-independent movement
     - Acceleration/deceleration
     - Smooth rotation
+    - Mouse look support (optional)
 
-[TODO] Add floor/ceiling colors
-    - Floor ray calculations
-    - Ceiling mirroring
-    - Color gradient based on distance
+[TODO] Add advanced rendering features
+    - Floor and ceiling textures
+    - Distance fog effect
+    - Dynamic lighting (optional)
+    - Sprite rendering (optional)
 
-[TODO] Polish rendering and optimize performance
+[TODO] Polish and optimize
     - Optimize ray calculations
-    - Add minimap
+    - Add configurable minimap
     - Performance improvements
+    - Code cleanup and documentation
+    - Memory management optimization

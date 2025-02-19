@@ -1,7 +1,8 @@
 #ifndef STRUCT_H
 #define STRUCT_H
+
 #include "../libft/libft.h"
-#include <../minilibx_opengl_20191021/mlx.h>
+#include "../minilibx_opengl_20191021/mlx.h"
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
@@ -25,6 +26,17 @@
 # define MOVE_SPEED 0.1
 # define ROT_SPEED 0.1
 
+// Forward declarations of structs
+typedef struct s_game t_game;
+typedef struct s_texture t_texture;
+typedef struct s_player t_player;
+typedef struct s_map t_map;
+typedef struct s_ray t_ray;
+typedef struct s_color t_color;
+
+// Error handling
+void    error_exit(const char *message);
+
 typedef struct s_color
 {
     int r;
@@ -34,11 +46,13 @@ typedef struct s_color
 
 typedef struct s_texture
 {
-    void *img;
-    char *addr;
-    int bits_per_pixel;
-    int line_length;
-    int endian;
+    void    *img;
+    char    *addr;
+    int     width;
+    int     height;
+    int     bits_per_pixel;
+    int     line_length;
+    int     endian;
 } t_texture;
 
 typedef struct s_player
@@ -59,9 +73,9 @@ typedef struct s_player
 
 typedef struct s_map
 {
-    char **map;
-    int width;
-    int height;
+    char    **map;
+    int     width;
+    int     height;
 } t_map;
 
 typedef struct s_ray
@@ -81,6 +95,7 @@ typedef struct s_ray
     int     hit;        // Was there a wall hit?
     int     side;       // Was a NS or a EW wall hit?
     double  perp_wall_dist; // Perpendicular wall distance
+    double  wall_x;     // Where exactly the wall was hit
 } t_ray;
 
 typedef struct s_game
@@ -110,6 +125,8 @@ int     parse_map_file(const char *filename, t_game *game);
 void    cleanup_game(t_game *game);
 void    print_game_state(t_game *game);
 char    *get_next_line(int fd);
+void    load_textures(t_game *game);
+unsigned int get_texture_color(t_texture *tex, int x, int y);
 
 // Movement prototypes
 int     key_press(int keycode, t_game *game);
@@ -124,5 +141,6 @@ void    draw_ray_2d(t_game *game, t_ray *ray);
 void    draw_3d_view(t_game *game, t_ray *ray, int x);
 void    init_dda(t_ray *ray);
 void    perform_dda(t_ray *ray, t_game *game);
+void    draw_textured_wall(t_game *game, t_ray *ray, int x);
 
 #endif
