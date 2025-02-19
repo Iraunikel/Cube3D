@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/18 15:52:27 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 13:11:47 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -112,12 +112,12 @@ static void	draw_map(t_game *game)
 
 static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
 {
-	double  delta_x;
-	double  delta_y;
-	double  step;
-	double  x;
-	double  y;
-	int     i;
+	double	delta_x;
+	double	delta_y;
+	double	step;
+	double	x;
+	double	y;
+	int		i;
 
 	delta_x = x2 - x1;
 	delta_y = y2 - y1;
@@ -138,21 +138,40 @@ static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
 
 void	draw_ray_2d(t_game *game, t_ray *ray)
 {
-	int size;
-	int start_x;
-	int start_y;
-	int end_x;
-	int end_y;
+	int	size;
+	int	start_x;
+	int	start_y;
+	int	end_x;
+	int	end_y;
+	double hit_x;
+	double hit_y;
 
-	size = 50;  // Same as in draw_square
+	size = 50; // Same as in draw_square
 	
+	// Calculate hit point based on perpendicular distance
+	if (ray->side == 0)
+	{
+		hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
+		hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
+	}
+	else
+	{
+		hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
+		hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
+	}
+
 	// Convert world coordinates to screen coordinates
 	start_x = ray->pos_x * size + (WINDOW_WIDTH - (game->map.width * size)) / 2;
 	start_y = ray->pos_y * size + (WINDOW_HEIGHT - (game->map.height * size)) / 2;
-	end_x = start_x + (ray->dir_x * size);
-	end_y = start_y + (ray->dir_y * size);
+	end_x = hit_x * size + (WINDOW_WIDTH - (game->map.width * size)) / 2;
+	end_y = hit_y * size + (WINDOW_HEIGHT - (game->map.height * size)) / 2;
 	
-	draw_line(game, start_x, start_y, end_x, end_y, 0x0000FF);  // Blue for rays
+	// Only draw if within screen bounds
+	if (start_x >= 0 && start_x < WINDOW_WIDTH && start_y >= 0 && start_y < WINDOW_HEIGHT &&
+		end_x >= 0 && end_x < WINDOW_WIDTH && end_y >= 0 && end_y < WINDOW_HEIGHT)
+	{
+		draw_line(game, start_x, start_y, end_x, end_y, 0x0000FF); // Blue for rays
+	}
 }
 
 int	game_loop(t_game *game)

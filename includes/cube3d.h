@@ -21,7 +21,7 @@
 # define KEY_DOWN 125
 
 // Movement constants
-# define MOVE_SPEED 0.3
+# define MOVE_SPEED 0.1
 # define ROT_SPEED 0.1
 
 typedef struct s_color
