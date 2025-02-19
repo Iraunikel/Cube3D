@@ -4,6 +4,7 @@
 #include <../minilibx_opengl_20191021/mlx.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 // Window dimensions
 # define WINDOW_WIDTH 1000

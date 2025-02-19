@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 15:34:14 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 16:14:26 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -193,18 +193,38 @@ void	draw_ray_2d(t_game *game, t_ray *ray)
 	}
 }
 
-static void	draw_vertical_line(t_game *game, int x, int start_y, int end_y,
-		int color)
+static void	calculate_line_dimensions(t_ray *ray, int *line_height,
+		int *draw_start, int *draw_end)
 {
-	int	y;
+	if (ray->perp_wall_dist < 0.1)
+		*line_height = WINDOW_HEIGHT;
+	else
+		*line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
+	*draw_start = (WINDOW_HEIGHT - *line_height) / 2;
+	if (*draw_start < 0)
+		*draw_start = 0;
+	*draw_end = (WINDOW_HEIGHT + *line_height) / 2;
+	if (*draw_end >= WINDOW_HEIGHT)
+		*draw_end = WINDOW_HEIGHT - 1;
+}
 
-	y = start_y;
-	while (y <= end_y)
-	{
-		if (y >= 0 && y < WINDOW_HEIGHT)
-			my_mlx_pixel_put(game, x + WINDOW_WIDTH / 2, y, color);
-		y++;
-	}
+static int	calculate_wall_color(t_ray *ray, double darkness)
+{
+	int	color;
+	int	r;
+	int	g;
+	int	b;
+
+	if (ray->side == 0)
+		color = 0xFFFFFF;
+	else
+		color = 0xCCCCCC;
+	if (ray->perp_wall_dist > 1.0)
+		darkness = 1.0 / ray->perp_wall_dist;
+	r = ((color >> 16) & 0xFF) * darkness;
+	g = ((color >> 8) & 0xFF) * darkness;
+	b = (color & 0xFF) * darkness;
+	return ((r << 16) | (g << 8) | b);
 }
 
 void	draw_3d_view(t_game *game, t_ray *ray, int x)
@@ -212,62 +232,84 @@ void	draw_3d_view(t_game *game, t_ray *ray, int x)
 	int	line_height;
 	int	draw_start;
 	int	draw_end;
+	int	screen_x;
+	int	y;
 	int	color;
 
-	// Calculate line height
-	line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
-	// Calculate lowest and highest pixel to fill in current stripe
-	draw_start = -line_height / 2 + WINDOW_HEIGHT / 2;
-	if (draw_start < 0)
-		draw_start = 0;
-	draw_end = line_height / 2 + WINDOW_HEIGHT / 2;
-	if (draw_end >= WINDOW_HEIGHT)
-		draw_end = WINDOW_HEIGHT - 1;
-	// Choose wall color based on side (darker for y-side)
-	color = 0xFFFFFF; // White for x-side
-	if (ray->side == 1)
-		color = 0xCCCCCC; // Lighter gray for y-side
-	// Draw the vertical line
-	draw_vertical_line(game, x, draw_start, draw_end, color);
+	screen_x = x + WINDOW_WIDTH / 2;
+	calculate_line_dimensions(ray, &line_height, &draw_start, &draw_end);
+	color = calculate_wall_color(ray, 1.0);
+	y = draw_start;
+	while (y <= draw_end)
+	{
+		if (y >= 0 && y < WINDOW_HEIGHT)
+			my_mlx_pixel_put(game, screen_x, y, color);
+		y++;
+	}
 }
 
 static void	draw_ceiling_floor(t_game *game)
 {
-	int	x;
-	int	y;
 	int	ceiling_color;
 	int	floor_color;
+	int	y;
+	int	x;
+	int	y;
+	int	x;
 
 	ceiling_color = game->ceiling_color.r << 16 | game->ceiling_color.g << 8 | game->ceiling_color.b;
 	floor_color = game->floor_color.r << 16 | game->floor_color.g << 8 | game->floor_color.b;
-	x = WINDOW_WIDTH / 2;
-	while (x < WINDOW_WIDTH)
+	// Draw ceiling (top half)
+	y = 0;
+	while (y < WINDOW_HEIGHT / 2)
 	{
-		y = 0;
-		while (y < WINDOW_HEIGHT)
+		x = WINDOW_WIDTH / 2;
+		while (x < WINDOW_WIDTH)
 		{
-			if (y < WINDOW_HEIGHT / 2)
-				my_mlx_pixel_put(game, x, y, ceiling_color);
-			else
-				my_mlx_pixel_put(game, x, y, floor_color);
-			y++;
+			my_mlx_pixel_put(game, x, y, ceiling_color);
+			x++;
 		}
-		x++;
+		y++;
+	}
+	// Draw floor (bottom half)
+	y = WINDOW_HEIGHT / 2;
+	while (y < WINDOW_HEIGHT)
+	{
+		x = WINDOW_WIDTH / 2;
+		while (x < WINDOW_WIDTH)
+		{
+			my_mlx_pixel_put(game, x, y, floor_color);
+			x++;
+		}
+		y++;
 	}
 }
 
 int	game_loop(t_game *game)
 {
-	// Clear screen
+	static int		frame_count = 0;
+	static clock_t	last_time = 0;
+	clock_t			current_time;
+
+	// Clear only necessary parts of the screen
 	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel
 			/ 8));
-	// Update player position based on movement flags
+	// Update player position
 	move_player(game);
-	// Draw ceiling and floor for 3D view
+	// Draw 3D view background first
 	draw_ceiling_floor(game);
 	// Draw 2D map and cast rays
 	draw_map(game);
 	cast_rays(game);
+	// FPS calculation (debug)
+	frame_count++;
+	current_time = clock();
+	if (current_time - last_time >= CLOCKS_PER_SEC)
+	{
+		printf("FPS: %d\n", frame_count);
+		frame_count = 0;
+		last_time = current_time;
+	}
 	// Update screen
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
 	return (0);

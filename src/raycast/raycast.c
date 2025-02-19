@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:54 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 15:35:42 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 15:52:11 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -40,17 +40,6 @@ void	init_dda(t_ray *ray)
 	}
 }
 
-static int	check_map_bounds(t_ray *ray, t_game *game)
-{
-	if (ray->map_x < 0 || ray->map_x >= game->map.width || ray->map_y < 0
-		|| ray->map_y >= game->map.height)
-	{
-		ray->hit = 1;
-		return (1);
-	}
-	return (0);
-}
-
 static void	update_ray_position(t_ray *ray)
 {
 	if (ray->side_dist_x < ray->side_dist_y)
@@ -82,13 +71,30 @@ void	perform_dda(t_ray *ray, t_game *game)
 	ray->hit = 0;
 	while (ray->hit == 0)
 	{
-		if (check_map_bounds(ray, game))
-			break ;
-		update_ray_position(ray);
-		if (ray->map_x >= 0 && ray->map_x < game->map.width && ray->map_y >= 0
-			&& ray->map_y < game->map.height
-			&& game->map.map[ray->map_y][ray->map_x] == '1')
+		// Check if we're completely out of bounds
+		if (ray->map_x < 0 || ray->map_x >= game->map.width || 
+			ray->map_y < 0 || ray->map_y >= game->map.height)
+		{
 			ray->hit = 1;
+			ray->perp_wall_dist = 100.0; // Set a large distance for out-of-bounds
+			return;
+		}
+
+		update_ray_position(ray);
+
+		// Check if we hit a wall
+		if (ray->map_x >= 0 && ray->map_x < game->map.width && 
+			ray->map_y >= 0 && ray->map_y < game->map.height)
+		{
+			if (game->map.map[ray->map_y][ray->map_x] == '1')
+				ray->hit = 1;
+		}
+		else
+		{
+			ray->hit = 1;
+			ray->perp_wall_dist = 100.0; // Set a large distance for out-of-bounds
+			return;
+		}
 	}
 	calculate_wall_distance(ray);
 }
@@ -105,29 +111,40 @@ void	calculate_ray_dir(t_ray *ray, t_player *player, double camera_x)
 
 void	cast_rays(t_game *game)
 {
-	t_ray ray;
-	int x;
-	double camera_x;
+	t_ray   ray;
+	int     x;
+	double  camera_x;
+	double  camera_factor;
 
-	x = 0;
-	while (x < WINDOW_WIDTH / 2) // Only cast rays for half the screen (2D view)
-	{
-		camera_x = 2 * x / (double)(WINDOW_WIDTH / 2) - 1;
-		calculate_ray_dir(&ray, &game->player, camera_x);
-		init_dda(&ray);
-		perform_dda(&ray, game);
-		draw_ray_2d(game, &ray);
-		x++;
-	}
-	// Cast rays for 3D view
+	camera_factor = 2.0 / (double)(WINDOW_WIDTH / 2);
+
+	// First pass: 2D view rays
 	x = 0;
 	while (x < WINDOW_WIDTH / 2)
 	{
-		camera_x = 2 * x / (double)(WINDOW_WIDTH / 2) - 1;
+		camera_x = x * camera_factor - 1.0;
 		calculate_ray_dir(&ray, &game->player, camera_x);
 		init_dda(&ray);
 		perform_dda(&ray, game);
-		draw_3d_view(game, &ray, x);
+		
+		// Only draw rays that hit valid walls
+		if (ray.perp_wall_dist < 100.0)
+			draw_ray_2d(game, &ray);
+		x++;
+	}
+
+	// Second pass: 3D view rays
+	x = 0;
+	while (x < WINDOW_WIDTH / 2)
+	{
+		camera_x = x * camera_factor - 1.0;
+		calculate_ray_dir(&ray, &game->player, camera_x);
+		init_dda(&ray);
+		perform_dda(&ray, game);
+
+		// Only draw walls that are in valid range
+		if (ray.perp_wall_dist < 100.0)
+			draw_3d_view(game, &ray, x);
 		x++;
 	}
 }
