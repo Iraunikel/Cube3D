@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 13:11:47 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 15:34:14 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,9 +30,11 @@ static void	draw_square(t_game *game, int x, int y, int color)
 	int	start_x;
 	int	start_y;
 
-	size = 50;
-	start_x = x * size + (1000 - (game->map.width * size)) / 2;
-	start_y = y * size + (1000 - (game->map.height * size)) / 2;
+	size = 25;
+	// Reduced size for the 2D view
+	start_x = x * size + (WINDOW_WIDTH / 4 - (game->map.width * size) / 2);
+	// Center in left half
+	start_y = y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size) / 2);
 	i = 0;
 	while (i < size - 1)
 	{
@@ -46,21 +48,11 @@ static void	draw_square(t_game *game, int x, int y, int color)
 	}
 }
 
-static void	draw_player(t_game *game)
+static void	draw_player_position(t_game *game, int px, int py)
 {
-	int		size;
-	int		px;
-	int		py;
-	int		line_length;
-	double	dir_x;
-	double	dir_y;
-	int		i;
-	int		j;
+	int	i;
+	int	j;
 
-	size = 50;
-	px = (int)(game->player.x * size + (1000 - (game->map.width * size)) / 2);
-	py = (int)(game->player.y * size + (1000 - (game->map.height * size)) / 2);
-	// Draw player position (smaller square)
 	i = -2;
 	while (i < 3)
 	{
@@ -72,8 +64,16 @@ static void	draw_player(t_game *game)
 		}
 		i++;
 	}
-	// Draw direction line
-	line_length = 30;
+}
+
+static void	draw_player_direction(t_game *game, int px, int py)
+{
+	int		line_length;
+	double	dir_x;
+	double	dir_y;
+	int		i;
+
+	line_length = 15;
 	dir_x = game->player.dir_x * line_length;
 	dir_y = game->player.dir_y * line_length;
 	i = 0;
@@ -83,6 +83,21 @@ static void	draw_player(t_game *game)
 			+ (int)(dir_y * i / line_length), 0x00FF00);
 		i++;
 	}
+}
+
+static void	draw_player(t_game *game)
+{
+	int	size;
+	int	px;
+	int	py;
+
+	size = 25;
+	px = (int)(game->player.x * size + (WINDOW_WIDTH / 4 - (game->map.width
+					* size) / 2));
+	py = (int)(game->player.y * size + (WINDOW_HEIGHT / 2 - (game->map.height
+					* size) / 2));
+	draw_player_position(game, px, py);
+	draw_player_direction(game, px, py);
 }
 
 static void	draw_map(t_game *game)
@@ -121,7 +136,10 @@ static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
 
 	delta_x = x2 - x1;
 	delta_y = y2 - y1;
-	step = fabs(delta_x) > fabs(delta_y) ? fabs(delta_x) : fabs(delta_y);
+	if (fabs(delta_x) > fabs(delta_y))
+		step = fabs(delta_x);
+	else
+		step = fabs(delta_y);
 	delta_x /= step;
 	delta_y /= step;
 	x = x1;
@@ -136,57 +154,121 @@ static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
 	}
 }
 
+static void	calculate_hit_point(t_ray *ray, double *hit_x, double *hit_y)
+{
+	*hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
+	*hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
+}
+
+static void	calculate_screen_coords(t_game *game, t_ray *ray, int size,
+		int coords[4])
+{
+	double	hit_x;
+	double	hit_y;
+
+	calculate_hit_point(ray, &hit_x, &hit_y);
+	coords[0] = ray->pos_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
+			/ 2);
+	coords[1] = ray->pos_y * size + (WINDOW_HEIGHT / 2 - (game->map.height
+				* size) / 2);
+	coords[2] = hit_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
+			/ 2);
+	coords[3] = hit_y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size)
+			/ 2);
+}
+
 void	draw_ray_2d(t_game *game, t_ray *ray)
 {
 	int	size;
-	int	start_x;
-	int	start_y;
-	int	end_x;
-	int	end_y;
-	double hit_x;
-	double hit_y;
+	int	coords[4];
 
-	size = 50; // Same as in draw_square
-	
-	// Calculate hit point based on perpendicular distance
-	if (ray->side == 0)
+	size = 25;
+	calculate_screen_coords(game, ray, size, coords);
+	if (coords[0] >= 0 && coords[0] < WINDOW_WIDTH / 2 && coords[1] >= 0
+		&& coords[1] < WINDOW_HEIGHT && coords[2] >= 0
+		&& coords[2] < WINDOW_WIDTH / 2 && coords[3] >= 0
+		&& coords[3] < WINDOW_HEIGHT)
 	{
-		hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
-		hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
+		draw_line(game, coords[0], coords[1], coords[2], coords[3], 0x0000FF);
 	}
-	else
-	{
-		hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
-		hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
-	}
+}
 
-	// Convert world coordinates to screen coordinates
-	start_x = ray->pos_x * size + (WINDOW_WIDTH - (game->map.width * size)) / 2;
-	start_y = ray->pos_y * size + (WINDOW_HEIGHT - (game->map.height * size)) / 2;
-	end_x = hit_x * size + (WINDOW_WIDTH - (game->map.width * size)) / 2;
-	end_y = hit_y * size + (WINDOW_HEIGHT - (game->map.height * size)) / 2;
-	
-	// Only draw if within screen bounds
-	if (start_x >= 0 && start_x < WINDOW_WIDTH && start_y >= 0 && start_y < WINDOW_HEIGHT &&
-		end_x >= 0 && end_x < WINDOW_WIDTH && end_y >= 0 && end_y < WINDOW_HEIGHT)
+static void	draw_vertical_line(t_game *game, int x, int start_y, int end_y,
+		int color)
+{
+	int	y;
+
+	y = start_y;
+	while (y <= end_y)
 	{
-		draw_line(game, start_x, start_y, end_x, end_y, 0x0000FF); // Blue for rays
+		if (y >= 0 && y < WINDOW_HEIGHT)
+			my_mlx_pixel_put(game, x + WINDOW_WIDTH / 2, y, color);
+		y++;
+	}
+}
+
+void	draw_3d_view(t_game *game, t_ray *ray, int x)
+{
+	int	line_height;
+	int	draw_start;
+	int	draw_end;
+	int	color;
+
+	// Calculate line height
+	line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
+	// Calculate lowest and highest pixel to fill in current stripe
+	draw_start = -line_height / 2 + WINDOW_HEIGHT / 2;
+	if (draw_start < 0)
+		draw_start = 0;
+	draw_end = line_height / 2 + WINDOW_HEIGHT / 2;
+	if (draw_end >= WINDOW_HEIGHT)
+		draw_end = WINDOW_HEIGHT - 1;
+	// Choose wall color based on side (darker for y-side)
+	color = 0xFFFFFF; // White for x-side
+	if (ray->side == 1)
+		color = 0xCCCCCC; // Lighter gray for y-side
+	// Draw the vertical line
+	draw_vertical_line(game, x, draw_start, draw_end, color);
+}
+
+static void	draw_ceiling_floor(t_game *game)
+{
+	int	x;
+	int	y;
+	int	ceiling_color;
+	int	floor_color;
+
+	ceiling_color = game->ceiling_color.r << 16 | game->ceiling_color.g << 8 | game->ceiling_color.b;
+	floor_color = game->floor_color.r << 16 | game->floor_color.g << 8 | game->floor_color.b;
+	x = WINDOW_WIDTH / 2;
+	while (x < WINDOW_WIDTH)
+	{
+		y = 0;
+		while (y < WINDOW_HEIGHT)
+		{
+			if (y < WINDOW_HEIGHT / 2)
+				my_mlx_pixel_put(game, x, y, ceiling_color);
+			else
+				my_mlx_pixel_put(game, x, y, floor_color);
+			y++;
+		}
+		x++;
 	}
 }
 
 int	game_loop(t_game *game)
 {
+	// Clear screen
+	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel
+			/ 8));
 	// Update player position based on movement flags
 	move_player(game);
-
-	// Draw 2D map
+	// Draw ceiling and floor for 3D view
+	draw_ceiling_floor(game);
+	// Draw 2D map and cast rays
 	draw_map(game);
-
-	// Cast rays
 	cast_rays(game);
-
 	// Update screen
 	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
-
 	return (0);
 }

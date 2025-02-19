@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/18 15:56:20 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/19 15:38:42 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,54 +44,67 @@ static void	rotate_player(t_game *game, double rot_speed)
                           game->player.plane_y * cos(rot_speed);
 }
 
+static void	handle_forward_backward(t_game *game)
+{
+	double new_x;
+	double new_y;
+
+	if (game->player.move_w)
+	{
+		new_x = game->player.x + game->player.dir_x * MOVE_SPEED;
+		new_y = game->player.y + game->player.dir_y * MOVE_SPEED;
+		if (!is_wall(game, new_x, game->player.y))
+			game->player.x = new_x;
+		if (!is_wall(game, game->player.x, new_y))
+			game->player.y = new_y;
+	}
+	if (game->player.move_s)
+	{
+		new_x = game->player.x - game->player.dir_x * MOVE_SPEED;
+		new_y = game->player.y - game->player.dir_y * MOVE_SPEED;
+		if (!is_wall(game, new_x, game->player.y))
+			game->player.x = new_x;
+		if (!is_wall(game, game->player.x, new_y))
+			game->player.y = new_y;
+	}
+}
+
+static void	handle_strafe(t_game *game)
+{
+	double new_x;
+	double new_y;
+
+	if (game->player.move_a)
+	{
+		new_x = game->player.x - game->player.plane_x * MOVE_SPEED;
+		new_y = game->player.y - game->player.plane_y * MOVE_SPEED;
+		if (!is_wall(game, new_x, game->player.y))
+			game->player.x = new_x;
+		if (!is_wall(game, game->player.x, new_y))
+			game->player.y = new_y;
+	}
+	if (game->player.move_d)
+	{
+		new_x = game->player.x + game->player.plane_x * MOVE_SPEED;
+		new_y = game->player.y + game->player.plane_y * MOVE_SPEED;
+		if (!is_wall(game, new_x, game->player.y))
+			game->player.x = new_x;
+		if (!is_wall(game, game->player.x, new_y))
+			game->player.y = new_y;
+	}
+}
+
+static void	handle_rotation(t_game *game)
+{
+	if (game->player.rot_left)
+		rotate_player(game, -ROT_SPEED);
+	if (game->player.rot_right)
+		rotate_player(game, ROT_SPEED);
+}
+
 void	move_player(t_game *game)
 {
-    double new_x;
-    double new_y;
-
-    // Forward/Backward movement
-    if (game->player.move_w)
-    {
-        new_x = game->player.x + game->player.dir_x * MOVE_SPEED;
-        new_y = game->player.y + game->player.dir_y * MOVE_SPEED;
-        if (!is_wall(game, new_x, game->player.y))
-            game->player.x = new_x;
-        if (!is_wall(game, game->player.x, new_y))
-            game->player.y = new_y;
-    }
-    if (game->player.move_s)
-    {
-        new_x = game->player.x - game->player.dir_x * MOVE_SPEED;
-        new_y = game->player.y - game->player.dir_y * MOVE_SPEED;
-        if (!is_wall(game, new_x, game->player.y))
-            game->player.x = new_x;
-        if (!is_wall(game, game->player.x, new_y))
-            game->player.y = new_y;
-    }
-
-    // Strafe movement
-    if (game->player.move_a)
-    {
-        new_x = game->player.x - game->player.plane_x * MOVE_SPEED;
-        new_y = game->player.y - game->player.plane_y * MOVE_SPEED;
-        if (!is_wall(game, new_x, game->player.y))
-            game->player.x = new_x;
-        if (!is_wall(game, game->player.x, new_y))
-            game->player.y = new_y;
-    }
-    if (game->player.move_d)
-    {
-        new_x = game->player.x + game->player.plane_x * MOVE_SPEED;
-        new_y = game->player.y + game->player.plane_y * MOVE_SPEED;
-        if (!is_wall(game, new_x, game->player.y))
-            game->player.x = new_x;
-        if (!is_wall(game, game->player.x, new_y))
-            game->player.y = new_y;
-    }
-
-    // Rotation
-    if (game->player.rot_left)
-        rotate_player(game, -ROT_SPEED);
-    if (game->player.rot_right)
-        rotate_player(game, ROT_SPEED);
-} 
+	handle_forward_backward(game);
+	handle_strafe(game);
+	handle_rotation(game);
+}
