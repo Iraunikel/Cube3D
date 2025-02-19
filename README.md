@@ -35,11 +35,16 @@ Natural Development Flow:
         * Implement wall hit detection ✓
         * Calculate perpendicular wall distance ✓
         * Proper ray visualization with wall stopping ✓
-    [NEXT] Wall height calculations
-        * Calculate wall height based on distance
-        * Implement vertical line drawing
-        * Add basic 3D perspective
-    [TODO] Basic 3D rendering
+    [DONE] Wall height calculations
+        * Calculate wall height based on distance ✓
+        * Implement vertical line drawing ✓
+        * Add basic 3D perspective ✓
+    [IN PROGRESS] Basic 3D rendering
+        * Split screen implementation (2D/3D) ✓
+        * Floor/ceiling colors ✓
+        * Wall shading based on orientation ✓
+        * [NEXT] Performance optimization
+        * [NEXT] Fix visual artifacts
 
 [TODO] Add wall rendering with solid colors
     - Wall distance calculation
@@ -77,5 +82,15 @@ Current Status:
 - Basic collision detection implemented
 - FOV visualization with ray casting implemented
 - DDA algorithm working correctly with proper wall detection
+- Split screen view implemented:
+    * Left side: 2D top-down view with ray visualization
+    * Right side: 3D view with basic wall rendering
+- Basic 3D rendering working:
+    * Walls scale correctly with distance
+    * Different shading for N/S vs E/W walls
+    * Ceiling and floor colors from map file
 - Clean program exit with ESC key or window close
-- Next step: Calculate wall heights and implement basic 3D rendering
+- Next steps: 
+    * Optimize rendering performance
+    * Fix any visual artifacts
+    * Prepare for texture implementation
