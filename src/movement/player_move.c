@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 15:53:55 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 15:56:28 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,11 @@ static int check_collision(t_game *game, double x, double y)
     radius = game->player.hitbox_radius;
     buffer = game->player.wall_buffer;
     
+    // Check center point first
+    if (is_wall(game, x, y))
+        return (1);
+    
+    // Check points around the circle
     i = 0;
     while (i < 8)
     {
@@ -52,10 +57,36 @@ static int check_collision(t_game *game, double x, double y)
     return (0);
 }
 
+static void try_slide_movement(t_game *game, double move_x, double move_y)
+{
+    double slide_x;
+    double slide_y;
+    double slide_factor;
+    
+    // Try original movement first
+    if (!check_collision(game, game->player.x + move_x, game->player.y + move_y))
+    {
+        game->player.x += move_x;
+        game->player.y += move_y;
+        return;
+    }
+
+    // Try sliding with reduced speed along walls
+    slide_factor = 0.8;  // Reduce speed when sliding
+    
+    // Try X movement
+    slide_x = move_x * slide_factor;
+    if (!check_collision(game, game->player.x + slide_x, game->player.y))
+        game->player.x += slide_x;
+
+    // Try Y movement
+    slide_y = move_y * slide_factor;
+    if (!check_collision(game, game->player.x, game->player.y + slide_y))
+        game->player.y += slide_y;
+}
+
 static void handle_movement(t_game *game)
 {
-    double new_x;
-    double new_y;
     double move_x;
     double move_y;
 
@@ -87,23 +118,9 @@ static void handle_movement(t_game *game)
         move_y += game->player.plane_y * MOVE_SPEED;
     }
 
-    // Try movement
-    new_x = game->player.x + move_x;
-    new_y = game->player.y + move_y;
-
-    // Try diagonal movement first
-    if (!check_collision(game, new_x, new_y))
-    {
-        game->player.x = new_x;
-        game->player.y = new_y;
-        return;
-    }
-
-    // If collision detected, try sliding along walls
-    if (!check_collision(game, game->player.x + move_x, game->player.y))
-        game->player.x += move_x;
-    if (!check_collision(game, game->player.x, game->player.y + move_y))
-        game->player.y += move_y;
+    // Apply movement with sliding
+    if (move_x != 0 || move_y != 0)
+        try_slide_movement(game, move_x, move_y);
 }
 
 static void handle_rotation(t_game *game)
