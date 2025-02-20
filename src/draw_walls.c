@@ -1,24 +1,24 @@
-#include "cub3d.h"
+#include "../includes/cube3d.h"
 
 static t_texture *get_wall_texture(t_game *game, t_ray *ray)
 {
     if (ray->side == 0)
     {
         if (ray->dir_x > 0)
-            return (&game->textures.east);
-        return (&game->textures.west);
+            return (&game->textures[2]); // East texture
+        return (&game->textures[3]);     // West texture
     }
     if (ray->dir_y > 0)
-        return (&game->textures.south);
-    return (&game->textures.north);
+        return (&game->textures[1]);     // South texture
+    return (&game->textures[0]);         // North texture
 }
 
 static void calculate_wall_x(t_ray *ray, t_player *player)
 {
     if (ray->side == 0)
-        ray->wall_x = player->pos_y + ray->perp_wall_dist * ray->dir_y;
+        ray->wall_x = player->y + ray->perp_wall_dist * ray->dir_y;
     else
-        ray->wall_x = player->pos_x + ray->perp_wall_dist * ray->dir_x;
+        ray->wall_x = player->x + ray->perp_wall_dist * ray->dir_x;
     ray->wall_x -= floor(ray->wall_x);
 }
 

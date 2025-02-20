@@ -145,4 +145,5 @@ void    init_dda(t_ray *ray);
 void    perform_dda(t_ray *ray, t_game *game);
 void    draw_textured_wall(t_game *game, t_ray *ray, int x);
 
+
 #endif
