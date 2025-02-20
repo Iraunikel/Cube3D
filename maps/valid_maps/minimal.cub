@@ -2,9 +2,8 @@ NO ./textures/wall_north.xpm
 SO ./textures/wall_south.xpm
 WE ./textures/wall_west.xpm
 EA ./textures/wall_east.xpm
-
-F 120,120,120
-C 225,225,225
+FT ./textures/floor.xpm
+CT ./textures/ceiling.xpm
 
 111
 1N1

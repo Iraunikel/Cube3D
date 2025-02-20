@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 15:39:08 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 23:59:42 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 14:12:05 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -178,6 +178,40 @@ static char **read_file_contents(int fd)
     return (contents);
 }
 
+static int parse_floor_ceiling(char *line, t_game *game)
+{
+    // Check if it's a texture path
+    if (line[1] == 'T')
+    {
+        if (line[0] == 'F')
+        {
+            game->use_texture_floor = 1;
+            return parse_texture_path(line + 1, &game->floor_texture);
+        }
+        else if (line[0] == 'C')
+        {
+            game->use_texture_ceiling = 1;
+            return parse_texture_path(line + 1, &game->ceiling_texture);
+        }
+        return (0);
+    }
+    // Otherwise, parse as color
+    else if (line[1] == ' ')
+    {
+        if (line[0] == 'F')
+        {
+            game->use_texture_floor = 0;
+            return parse_color(line, &game->floor_color);
+        }
+        else if (line[0] == 'C')
+        {
+            game->use_texture_ceiling = 0;
+            return parse_color(line, &game->ceiling_color);
+        }
+    }
+    return (0);
+}
+
 int parse_map_file(const char *filename, t_game *game)
 {
     int     fd;
@@ -251,18 +285,9 @@ int parse_map_file(const char *filename, t_game *game)
                 return (0);
             }
         }
-        else if (line[0] == 'F' && line[1] == ' ')
+        else if (line[0] == 'F' || line[0] == 'C')
         {
-            if (!parse_color(line, &game->floor_color))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (line[0] == 'C' && line[1] == ' ')
-        {
-            if (!parse_color(line, &game->ceiling_color))
+            if (!parse_floor_ceiling(line, game))
             {
                 free(line);
                 free_array(file_contents);

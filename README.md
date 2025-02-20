@@ -58,17 +58,10 @@ Natural Development Flow:
     - Proper hitbox ✓
     - Wall distance buffer ✓
 
-[TODO] Implement smooth movement and rotation
-    - Frame-independent movement
-    - Acceleration/deceleration
-    - Smooth rotation
-    - Mouse look support (optional)
-
 [TODO] Add advanced rendering features
     - Floor and ceiling textures
-    - Distance fog effect
-    - Dynamic lighting (optional)
-    - Sprite rendering (optional)
+    - Minimap system
+    - Doors which can open and close
 
 [TODO] Polish and optimize
     - Optimize ray calculations
@@ -76,3 +69,9 @@ Natural Development Flow:
     - Performance improvements
     - Code cleanup and documentation
     - Memory management optimization
+
+[OPTIONAL] Implement smooth movement and rotation
+    - Frame-independent movement
+    - Acceleration/deceleration
+    - Smooth rotation
+

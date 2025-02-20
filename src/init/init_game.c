@@ -42,12 +42,19 @@ static void init_map_and_player(t_game *game)
 
 static void init_colors_and_textures(t_game *game)
 {
-    game->ceiling_color = (t_color){0, 0, 0};
-    game->floor_color = (t_color){0, 0, 0};
+    // Initialize colors with default values
+    game->ceiling_color = (t_color){135, 206, 235};  // Light sky blue
+    game->floor_color = (t_color){139, 69, 19};      // Saddle brown
+    
+    // Initialize texture pointers to NULL
     game->north_texture = NULL;
     game->south_texture = NULL;
     game->west_texture = NULL;
     game->east_texture = NULL;
+    game->floor_texture = NULL;
+    game->ceiling_texture = NULL;
+    game->use_texture_floor = 0;
+    game->use_texture_ceiling = 0;
 }
 
 int init_game(t_game *game)

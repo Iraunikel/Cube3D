@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 23:56:36 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 15:05:48 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -271,47 +271,158 @@ void	draw_3d_view(t_game *game, t_ray *ray, int x)
 	draw_textured_wall(game, ray, screen_x);
 }
 
-static void	draw_ceiling_floor(t_game *game)
+static void calculate_floor_position(double *ray_dir, int x, int y, t_floor_calc *calc)
 {
-	int	ceiling_color;
-	int	floor_color;
-	int	y;
-	int	x;
+    // Ray direction for leftmost ray (x = 0) and rightmost ray (x = w)
+    double ray_dir_x0 = ray_dir[0];
+    double ray_dir_y0 = ray_dir[1];
+    double ray_dir_x1 = ray_dir[2];
+    double ray_dir_y1 = ray_dir[3];
 
-	ceiling_color = (game->ceiling_color.r << 16) | (game->ceiling_color.g << 8) | game->ceiling_color.b;
-	floor_color = (game->floor_color.r << 16) | (game->floor_color.g << 8) | game->floor_color.b;
-	
-	printf("Debug - Colors:\n");
-	printf("Ceiling RGB: %d,%d,%d (hex: 0x%06X)\n", 
-		game->ceiling_color.r, game->ceiling_color.g, game->ceiling_color.b, ceiling_color);
-	printf("Floor RGB: %d,%d,%d (hex: 0x%06X)\n", 
-		game->floor_color.r, game->floor_color.g, game->floor_color.b, floor_color);
+    // Current y position compared to horizon
+    double p = y - WINDOW_HEIGHT / 2.0;
+    
+    // Vertical position of the camera
+    double pos_z = 0.5 * WINDOW_HEIGHT;
 
-	// Draw ceiling (top half)
-	y = 0;
-	while (y < WINDOW_HEIGHT / 2)
-	{
-		x = WINDOW_WIDTH / 2;
-		while (x < WINDOW_WIDTH)
-		{
-			my_mlx_pixel_put(game, x, y, ceiling_color);
-			x++;
-		}
-		y++;
-	}
-	
-	// Draw floor (bottom half)
-	y = WINDOW_HEIGHT / 2;
-	while (y < WINDOW_HEIGHT)
-	{
-		x = WINDOW_WIDTH / 2;
-		while (x < WINDOW_WIDTH)
-		{
-			my_mlx_pixel_put(game, x, y, floor_color);
-			x++;
-		}
-		y++;
-	}
+    // Horizontal distance from the camera to the floor for the current row
+    double row_distance = pos_z / p;
+
+    // Calculate the real world coordinates of the leftmost column
+    double floor_step_x = row_distance * (ray_dir_x1 - ray_dir_x0) / WINDOW_WIDTH;
+    double floor_step_y = row_distance * (ray_dir_y1 - ray_dir_y0) / WINDOW_WIDTH;
+
+    calc->floor_x = calc->player_x + row_distance * ray_dir_x0;
+    calc->floor_y = calc->player_y + row_distance * ray_dir_y0;
+
+    // Add the step for this x coordinate
+    double relative_x = x - WINDOW_WIDTH / 2.0;
+    calc->floor_x += floor_step_x * relative_x;
+    calc->floor_y += floor_step_y * relative_x;
+}
+
+static void get_texture_coordinates(t_texture *tex, t_floor_calc *calc, int *tex_coords)
+{
+    // Get the texture coordinates
+    double fx = calc->floor_x - floor(calc->floor_x);
+    double fy = calc->floor_y - floor(calc->floor_y);
+
+    if (fx < 0) fx += 1.0;
+    if (fy < 0) fy += 1.0;
+
+    tex_coords[0] = (int)(tex->width * fx) & (tex->width - 1);
+    tex_coords[1] = (int)(tex->height * fy) & (tex->height - 1);
+}
+
+static void calculate_ray_directions(t_game *game, double *ray_dir)
+{
+    // Calculate the leftmost and rightmost rays
+    double camera_plane_x = game->player.plane_x;
+    double camera_plane_y = game->player.plane_y;
+    
+    ray_dir[0] = game->player.dir_x - camera_plane_x;  // leftmost ray x
+    ray_dir[1] = game->player.dir_y - camera_plane_y;  // leftmost ray y
+    ray_dir[2] = game->player.dir_x + camera_plane_x;  // rightmost ray x
+    ray_dir[3] = game->player.dir_y + camera_plane_y;  // rightmost ray y
+}
+
+static void get_ceiling_texture_coordinates(t_texture *tex, t_game *game, int x, int y, int *tex_coords)
+{
+    // For ceiling/sky, we want a more static effect that only changes with rotation
+    double dir_x = game->player.dir_x;
+    double dir_y = game->player.dir_y;
+    
+    // Calculate angle from player's direction
+    double angle = atan2(dir_y, dir_x);
+    if (angle < 0) angle += 2 * M_PI;
+    
+    // Map screen coordinates to texture coordinates
+    double tx = (angle / (2 * M_PI) + (double)x / WINDOW_WIDTH) * tex->width;
+    double ty = ((double)y / (WINDOW_HEIGHT / 2)) * tex->height;
+    
+    tex_coords[0] = ((int)tx) & (tex->width - 1);
+    tex_coords[1] = ((int)ty) & (tex->height - 1);
+}
+
+static void draw_textured_floor_ceiling(t_game *game, int x, int y, int is_ceiling)
+{
+    double ray_dir[4];
+    t_floor_calc calc;
+    int tex_coords[2];
+    t_texture *tex;
+
+    if (is_ceiling == 1)
+    {
+        tex = &game->textures[TEX_CEIL];
+        get_ceiling_texture_coordinates(tex, game, x, y, tex_coords);
+    }
+    else
+    {
+        calc.player_x = game->player.x;
+        calc.player_y = game->player.y;
+        calculate_ray_directions(game, ray_dir);
+        calculate_floor_position(ray_dir, x, y, &calc);
+        tex = &game->textures[TEX_FLOOR];
+        get_texture_coordinates(tex, &calc, tex_coords);
+    }
+
+    unsigned int color = get_texture_color(tex, tex_coords[0], tex_coords[1]);
+    my_mlx_pixel_put(game, x, y, color);
+}
+
+static void draw_ceiling_section(t_game *game, int x, int y)
+{
+    if (game->use_texture_ceiling == 1)
+    {
+        draw_textured_floor_ceiling(game, x, y, 1);
+        return;
+    }
+    
+    int ceiling_color;
+    ceiling_color = (game->ceiling_color.r << 16);
+    ceiling_color |= (game->ceiling_color.g << 8);
+    ceiling_color |= game->ceiling_color.b;
+    my_mlx_pixel_put(game, x, y, ceiling_color);
+}
+
+static void draw_floor_section(t_game *game, int x, int y)
+{
+    if (game->use_texture_floor == 1)
+    {
+        draw_textured_floor_ceiling(game, x, y, 0);
+        return;
+    }
+    
+    int floor_color;
+    floor_color = (game->floor_color.r << 16);
+    floor_color |= (game->floor_color.g << 8);
+    floor_color |= game->floor_color.b;
+    my_mlx_pixel_put(game, x, y, floor_color);
+}
+
+static void draw_ceiling_floor(t_game *game)
+{
+    int y;
+    int x;
+
+    y = 0;
+    while (y < WINDOW_HEIGHT)
+    {
+        x = WINDOW_WIDTH / 2;
+        while (x < WINDOW_WIDTH)
+        {
+            if (y < WINDOW_HEIGHT / 2)
+            {
+                draw_ceiling_section(game, x, y);
+            }
+            else
+            {
+                draw_floor_section(game, x, y);
+            }
+            x++;
+        }
+        y++;
+    }
 }
 
 int	game_loop(t_game *game)

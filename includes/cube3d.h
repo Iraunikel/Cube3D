@@ -26,6 +26,15 @@
 # define MOVE_SPEED 0.1
 # define ROT_SPEED 0.1
 
+// Texture indices
+# define TEX_NORTH 0
+# define TEX_SOUTH 1
+# define TEX_EAST  2
+# define TEX_WEST  3
+# define TEX_FLOOR 4
+# define TEX_CEIL  5
+# define NUM_TEXTURES 6
+
 // Forward declarations of structs
 typedef struct s_game t_game;
 typedef struct s_texture t_texture;
@@ -117,8 +126,23 @@ typedef struct s_game
     char        *south_texture;
     char        *west_texture;
     char        *east_texture;
-    t_texture   textures[4];  // Array to store loaded textures
+    char        *floor_texture;    // New: path to floor texture
+    char        *ceiling_texture;  // New: path to ceiling texture
+    t_texture   textures[NUM_TEXTURES];  // Expanded array to store all textures
+    int         use_texture_floor;   // Flag to use texture instead of color for floor
+    int         use_texture_ceiling; // Flag to use texture instead of color for ceiling
 } t_game;
+
+typedef struct s_floor_calc
+{
+    double  player_x;
+    double  player_y;
+    double  row_distance;
+    double  floor_step_x;
+    double  floor_step_y;
+    double  floor_x;
+    double  floor_y;
+} t_floor_calc;
 
 // Function prototypes
 int     validate_file_extension(const char *filename);

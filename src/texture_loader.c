@@ -19,15 +19,33 @@ void    load_textures(t_game *game)
     printf("South: %s\n", game->south_texture);
     printf("West: %s\n", game->west_texture);
     printf("East: %s\n", game->east_texture);
+    printf("Floor: %s (Use texture: %d)\n", game->floor_texture, game->use_texture_floor);
+    printf("Ceiling: %s (Use texture: %d)\n", game->ceiling_texture, game->use_texture_ceiling);
 
     if (!game->north_texture || !game->south_texture || 
         !game->west_texture || !game->east_texture)
-        error_exit("Missing texture path");
+        error_exit("Missing wall texture path");
 
-    init_texture(&game->textures[0], game->mlx, game->north_texture);
-    init_texture(&game->textures[1], game->mlx, game->south_texture);
-    init_texture(&game->textures[2], game->mlx, game->west_texture);
-    init_texture(&game->textures[3], game->mlx, game->east_texture);
+    // Load wall textures
+    init_texture(&game->textures[TEX_NORTH], game->mlx, game->north_texture);
+    init_texture(&game->textures[TEX_SOUTH], game->mlx, game->south_texture);
+    init_texture(&game->textures[TEX_EAST], game->mlx, game->east_texture);
+    init_texture(&game->textures[TEX_WEST], game->mlx, game->west_texture);
+
+    // Load floor and ceiling textures if specified
+    if (game->use_texture_floor)
+    {
+        if (!game->floor_texture)
+            error_exit("Floor texture enabled but no path specified");
+        init_texture(&game->textures[TEX_FLOOR], game->mlx, game->floor_texture);
+    }
+    
+    if (game->use_texture_ceiling)
+    {
+        if (!game->ceiling_texture)
+            error_exit("Ceiling texture enabled but no path specified");
+        init_texture(&game->textures[TEX_CEIL], game->mlx, game->ceiling_texture);
+    }
 }
 
 unsigned int get_texture_color(t_texture *tex, int x, int y)
