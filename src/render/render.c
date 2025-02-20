@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 15:05:48 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 19:01:24 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -241,24 +241,78 @@ void	draw_textured_wall(t_game *game, t_ray *ray, int x)
 
 	tex = get_wall_texture(game, ray);
 	calculate_wall_x(ray, &game->player);
-	tex_x = (int)(ray->wall_x * tex->width);
+	
+	// Improve precision for wall_x calculation
+	ray->wall_x -= floor(ray->wall_x);
+	ray->wall_x = fmax(0.0, fmin(1.0, ray->wall_x));
+	
+	// Calculate texture coordinate with better precision
+	tex_x = (int)(ray->wall_x * (double)tex->width);
 	if ((ray->side == 0 && ray->dir_x > 0) ||
 		(ray->side == 1 && ray->dir_y < 0))
 		tex_x = tex->width - tex_x - 1;
+	
+	// Ensure tex_x stays within bounds with proper clamping
+	tex_x = (tex_x < 0) ? 0 : tex_x;
+	tex_x = (tex_x >= tex->width) ? tex->width - 1 : tex_x;
 
 	calculate_line_dimensions(ray, &line_height, &draw_start, &draw_end);
-	step = 1.0 * tex->height / line_height;
+	
+	// Improve step calculation precision
+	step = 1.0 * (double)tex->height / (double)line_height;
 	tex_pos = (draw_start - WINDOW_HEIGHT / 2 + line_height / 2) * step;
+	
+	// Add tiny offset to avoid floating point precision issues
+	tex_pos += 0.00001;
 
 	y = draw_start;
 	while (y < draw_end)
 	{
+		// Calculate tex_y with improved precision
 		int tex_y = (int)tex_pos & (tex->height - 1);
-		tex_pos += step;
+		tex_y = (tex_y < 0) ? 0 : tex_y;
+		tex_y = (tex_y >= tex->height) ? tex->height - 1 : tex_y;
+		
+		// Get base color
 		unsigned int color = get_texture_color(tex, tex_x, tex_y);
+		
+		// Extract RGB components
+		int r = (color >> 16) & 0xFF;
+		int g = (color >> 8) & 0xFF;
+		int b = color & 0xFF;
+		
+		// Calculate distance factor with non-linear falloff
+		double dist_factor = 1.0;
+		if (ray->perp_wall_dist > 1.0)
+		{
+			dist_factor = 1.0 / (1.0 + (ray->perp_wall_dist - 1.0) * 0.3);
+			dist_factor = fmax(0.3, dist_factor); // Don't make it too dark
+		}
+		
+		// Apply side shading with perspective
 		if (ray->side == 1)
-			color = (color >> 1) & 8355711; // Make sides darker
+		{
+			double side_factor = 0.7 + 0.3 * (1.0 - fabs(ray->dir_y));
+			dist_factor *= side_factor;
+		}
+		
+		// Apply height-based shading for more depth
+		double height_factor = 1.0 - fabs((double)(y - WINDOW_HEIGHT / 2) / (double)WINDOW_HEIGHT) * 0.2;
+		dist_factor *= height_factor;
+		
+		// Apply all lighting factors
+		r = (int)(r * dist_factor);
+		g = (int)(g * dist_factor);
+		b = (int)(b * dist_factor);
+		
+		// Clamp RGB values
+		r = (r < 0) ? 0 : (r > 255) ? 255 : r;
+		g = (g < 0) ? 0 : (g > 255) ? 255 : g;
+		b = (b < 0) ? 0 : (b > 255) ? 255 : b;
+		
+		color = (r << 16) | (g << 8) | b;
 		my_mlx_pixel_put(game, x, y, color);
+		tex_pos += step;
 		y++;
 	}
 }

@@ -53,7 +53,17 @@ unsigned int get_texture_color(t_texture *tex, int x, int y)
     char    *pixel;
     int     offset;
 
+    // Ensure coordinates are within bounds using clamping
+    x = (x < 0) ? 0 : x;
+    x = (x >= tex->width) ? tex->width - 1 : x;
+    y = (y < 0) ? 0 : y;
+    y = (y >= tex->height) ? tex->height - 1 : y;
+    
+    // Calculate pixel offset with bounds checking
     offset = (y * tex->line_length + x * (tex->bits_per_pixel / 8));
+    if (offset < 0 || offset >= tex->line_length * tex->height)
+        return (0);  // Return black for invalid offsets
+        
     pixel = tex->addr + offset;
     return (*(unsigned int *)pixel);
 } 
