@@ -46,17 +46,17 @@ Natural Development Flow:
         * Performance optimization ✓
         * Fix visual artifacts ✓
 
-[IN PROGRESS] Implement texture loading and mapping
+[DONE] Implement texture loading and mapping
     - Load XPM textures ✓
     - Calculate texture coordinates ✓
     - Apply textures to walls ✓
-    - Proper texture scaling and alignment [DOUBLE CHECK]
+    - Proper texture scaling and alignment ✓
 
-[TODO] Add proper collision detection
-    - Sliding along walls
-    - Corner handling
-    - Proper hitbox
-    - Wall distance buffer
+[DONE] Add proper collision detection
+    - Sliding along walls ✓
+    - Corner handling ✓
+    - Proper hitbox ✓
+    - Wall distance buffer ✓
 
 [TODO] Implement smooth movement and rotation
     - Frame-independent movement

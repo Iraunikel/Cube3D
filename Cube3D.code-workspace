@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"struct.h": "c",
+			"libft.h": "c"
+		}
+	}
+}

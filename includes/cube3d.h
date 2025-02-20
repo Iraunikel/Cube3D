@@ -63,6 +63,8 @@ typedef struct s_player
     double  dir_y;     // Direction vector Y
     double  plane_x;   // Camera plane X (for FOV)
     double  plane_y;   // Camera plane Y
+    double  hitbox_radius;  // Player's hitbox radius
+    double  wall_buffer;    // Minimum distance from walls
     int     move_w;    // Movement flags
     int     move_s;
     int     move_a;
