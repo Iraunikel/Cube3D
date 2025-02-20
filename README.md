@@ -58,11 +58,11 @@ Natural Development Flow:
     - Proper hitbox ✓
     - Wall distance buffer ✓
 
-[TODO] Implement smooth movement and rotation
-    - Frame-independent movement
-    - Acceleration/deceleration
-    - Smooth rotation
-    - Mouse look support (optional)
+[DONE] Implement smooth movement and rotation
+    - Frame-independent movement ✓
+    - Acceleration/deceleration ✓
+    - Smooth rotation ✓
+    - Mouse look support (skipped)
 
 [TODO] Add advanced rendering features
     - Floor and ceiling textures

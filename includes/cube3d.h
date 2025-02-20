@@ -25,6 +25,10 @@
 // Movement constants
 # define MOVE_SPEED 0.1
 # define ROT_SPEED 0.1
+# define MAX_SPEED 0.15
+# define ACCELERATION 0.01
+# define DECELERATION 0.008
+# define MAX_ROT_SPEED 0.12
 
 // Forward declarations of structs
 typedef struct s_game t_game;
@@ -65,10 +69,12 @@ typedef struct s_player
     double  plane_y;   // Camera plane Y
     double  hitbox_radius;  // Player's hitbox radius
     double  wall_buffer;    // Minimum distance from walls
+    double  velocity;       // Forward/backward movement speed
+    double  rot_velocity;   // Current rotation speed
     int     move_w;    // Movement flags
     int     move_s;
-    int     move_a;
-    int     move_d;
+    int     move_a;    // Left rotation
+    int     move_d;    // Right rotation
     int     rot_left;
     int     rot_right;
 } t_player;
