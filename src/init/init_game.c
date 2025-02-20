@@ -35,6 +35,8 @@ static void init_map_and_player(t_game *game)
     game->player.y = 0;
     game->player.hitbox_radius = 0.2;  // 20% of a tile
     game->player.wall_buffer = 0.1;    // 10% of a tile
+    game->player.velocity = 0;         // Start from rest
+    game->player.rot_velocity = 0;     // Start from rest
     game->map.map = NULL;
     game->map.width = 0;
     game->map.height = 0;
