@@ -78,14 +78,12 @@ typedef struct s_player
     double  plane_y;   // Camera plane Y
     double  hitbox_radius;  // Player's hitbox radius
     double  wall_buffer;    // Minimum distance from walls
-    double  velocity;       // Forward/backward movement speed
-    double  rot_velocity;   // Current rotation speed
-    int     move_w;    // Movement flags
-    int     move_s;
-    int     move_a;    // Left rotation
-    int     move_d;    // Right rotation
-    int     rot_left;
-    int     rot_right;
+    int     move_w;    // Forward
+    int     move_s;    // Backward
+    int     move_a;    // Strafe left
+    int     move_d;    // Strafe right
+    int     rot_left;  // Turn left (arrow)
+    int     rot_right; // Turn right (arrow)
 } t_player;
 
 typedef struct s_map

@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 13:06:58 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 15:53:55 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,50 +24,6 @@ static int	is_wall(t_game *game, double x, double y)
         map_y < 0 || map_y >= game->map.height)
         return (1);
     return (game->map.map[map_y][map_x] == '1');
-}
-
-static void update_velocity(t_player *player)
-{
-    // Forward/Backward velocity
-    if (player->move_w || player->move_s)
-    {
-        double target_velocity = player->move_w ? MAX_SPEED : -MAX_SPEED;
-        if (player->velocity < target_velocity)
-            player->velocity += ACCELERATION;
-        else if (player->velocity > target_velocity)
-            player->velocity -= ACCELERATION;
-    }
-    else
-    {
-        // Decelerate when no movement keys are pressed
-        if (player->velocity > 0)
-            player->velocity = fmax(0, player->velocity - DECELERATION);
-        else if (player->velocity < 0)
-            player->velocity = fmin(0, player->velocity + DECELERATION);
-    }
-
-    // Rotation velocity (both arrows and A/D keys)
-    if (player->rot_right || player->move_d || player->rot_left || player->move_a)
-    {
-        double target_rot;
-        if (player->rot_right || player->move_d)
-            target_rot = MAX_ROT_SPEED;
-        else
-            target_rot = -MAX_ROT_SPEED;
-
-        if (player->rot_velocity < target_rot)
-            player->rot_velocity += ACCELERATION;
-        else if (player->rot_velocity > target_rot)
-            player->rot_velocity -= ACCELERATION;
-    }
-    else
-    {
-        // Decelerate rotation when no keys are pressed
-        if (player->rot_velocity > 0)
-            player->rot_velocity = fmax(0, player->rot_velocity - DECELERATION);
-        else if (player->rot_velocity < 0)
-            player->rot_velocity = fmin(0, player->rot_velocity + DECELERATION);
-    }
 }
 
 static int check_collision(t_game *game, double x, double y)
@@ -96,20 +52,44 @@ static int check_collision(t_game *game, double x, double y)
     return (0);
 }
 
-static void handle_forward_backward(t_game *game)
+static void handle_movement(t_game *game)
 {
     double new_x;
     double new_y;
-    double move_step;
-    double slide_x;
-    double slide_y;
+    double move_x;
+    double move_y;
 
-    if (game->player.velocity == 0)
-        return;
+    // Calculate movement vector based on input
+    move_x = 0;
+    move_y = 0;
 
-    move_step = game->player.velocity;
-    new_x = game->player.x + game->player.dir_x * move_step;
-    new_y = game->player.y + game->player.dir_y * move_step;
+    // Forward/Backward movement
+    if (game->player.move_w)
+    {
+        move_x += game->player.dir_x * MOVE_SPEED;
+        move_y += game->player.dir_y * MOVE_SPEED;
+    }
+    if (game->player.move_s)
+    {
+        move_x -= game->player.dir_x * MOVE_SPEED;
+        move_y -= game->player.dir_y * MOVE_SPEED;
+    }
+
+    // Strafe movement
+    if (game->player.move_a)
+    {
+        move_x += game->player.plane_x * -MOVE_SPEED;
+        move_y += game->player.plane_y * -MOVE_SPEED;
+    }
+    if (game->player.move_d)
+    {
+        move_x += game->player.plane_x * MOVE_SPEED;
+        move_y += game->player.plane_y * MOVE_SPEED;
+    }
+
+    // Try movement
+    new_x = game->player.x + move_x;
+    new_y = game->player.y + move_y;
 
     // Try diagonal movement first
     if (!check_collision(game, new_x, new_y))
@@ -120,36 +100,38 @@ static void handle_forward_backward(t_game *game)
     }
 
     // If collision detected, try sliding along walls
-    slide_x = game->player.x + game->player.dir_x * move_step;
-    if (!check_collision(game, slide_x, game->player.y))
-        game->player.x = slide_x;
-
-    slide_y = game->player.y + game->player.dir_y * move_step;
-    if (!check_collision(game, game->player.x, slide_y))
-        game->player.y = slide_y;
+    if (!check_collision(game, game->player.x + move_x, game->player.y))
+        game->player.x += move_x;
+    if (!check_collision(game, game->player.x, game->player.y + move_y))
+        game->player.y += move_y;
 }
 
 static void handle_rotation(t_game *game)
 {
-    if (game->player.rot_velocity == 0)
+    double old_dir_x;
+    double old_plane_x;
+    double rot_speed;
+
+    if (!game->player.rot_left && !game->player.rot_right)
         return;
-        
-    double old_dir_x = game->player.dir_x;
-    game->player.dir_x = game->player.dir_x * cos(game->player.rot_velocity) - 
-                        game->player.dir_y * sin(game->player.rot_velocity);
-    game->player.dir_y = old_dir_x * sin(game->player.rot_velocity) + 
-                        game->player.dir_y * cos(game->player.rot_velocity);
+
+    rot_speed = ROT_SPEED * (game->player.rot_left ? -1 : 1);
     
-    double old_plane_x = game->player.plane_x;
-    game->player.plane_x = game->player.plane_x * cos(game->player.rot_velocity) - 
-                          game->player.plane_y * sin(game->player.rot_velocity);
-    game->player.plane_y = old_plane_x * sin(game->player.rot_velocity) + 
-                          game->player.plane_y * cos(game->player.rot_velocity);
+    old_dir_x = game->player.dir_x;
+    game->player.dir_x = game->player.dir_x * cos(rot_speed) - 
+                        game->player.dir_y * sin(rot_speed);
+    game->player.dir_y = old_dir_x * sin(rot_speed) + 
+                        game->player.dir_y * cos(rot_speed);
+    
+    old_plane_x = game->player.plane_x;
+    game->player.plane_x = game->player.plane_x * cos(rot_speed) - 
+                          game->player.plane_y * sin(rot_speed);
+    game->player.plane_y = old_plane_x * sin(rot_speed) + 
+                          game->player.plane_y * cos(rot_speed);
 }
 
 void move_player(t_game *game)
 {
-    update_velocity(&game->player);
-    handle_forward_backward(game);
+    handle_movement(game);
     handle_rotation(game);
 }
