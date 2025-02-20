@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/19 15:39:08 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 14:12:05 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 21:51:16 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -107,39 +107,49 @@ static int allocate_map(t_map *map, char **lines, int start_line)
     return (1);
 }
 
+static void find_player_position(t_game *game, int i)
+{
+    int j;
+
+    j = 0;
+    while (game->map.map[i][j])
+    {
+        if (ft_strchr("NSEW", game->map.map[i][j]))
+        {
+            game->player.x = j + 0.5;
+            game->player.y = i + 0.5;
+            break;
+        }
+        j++;
+    }
+}
+
+static int copy_map_line(t_game *game, char **lines, int i, int start_line)
+{
+    game->map.map[i] = ft_strdup(lines[start_line + i]);
+    if (!game->map.map[i])
+    {
+        while (--i >= 0)
+            free(game->map.map[i]);
+        free(game->map.map);
+        return (0);
+    }
+    find_player_position(game, i);
+    return (1);
+}
+
 static int parse_map_content(t_game *game, char **lines, int start_line)
 {
     int i;
-    int j;
     
     if (!allocate_map(&game->map, lines, start_line))
         return (0);
     
-    // Copy map content
     i = 0;
     while (i < game->map.height)
     {
-        game->map.map[i] = ft_strdup(lines[start_line + i]);
-        if (!game->map.map[i])
-        {
-            while (--i >= 0)
-                free(game->map.map[i]);
-            free(game->map.map);
+        if (!copy_map_line(game, lines, i, start_line))
             return (0);
-        }
-        
-        // Find player position
-        j = 0;
-        while (game->map.map[i][j])
-        {
-            if (ft_strchr("NSEW", game->map.map[i][j]))
-            {
-                game->player.x = j + 0.5;
-                game->player.y = i + 0.5;
-                break;
-            }
-            j++;
-        }
         i++;
     }
     return (1);
@@ -212,12 +222,51 @@ static int parse_floor_ceiling(char *line, t_game *game)
     return (0);
 }
 
+static int parse_texture_line(char *line, t_game *game)
+{
+    if (ft_strncmp(line, "NO ", 3) == 0)
+        return parse_texture_path(line, &game->north_texture);
+    if (ft_strncmp(line, "SO ", 3) == 0)
+        return parse_texture_path(line, &game->south_texture);
+    if (ft_strncmp(line, "WE ", 3) == 0)
+        return parse_texture_path(line, &game->west_texture);
+    if (ft_strncmp(line, "EA ", 3) == 0)
+        return parse_texture_path(line, &game->east_texture);
+    return (1);
+}
+
+static int process_map_line(char *line, int *map_start, int i)
+{
+    if (ft_strchr("01NSEW ", line[0]))
+    {
+        if (*map_start == -1)
+            *map_start = i;
+    }
+    return (1);
+}
+
+static int parse_line_content(char *line, t_game *game, int *map_start, int i)
+{
+    if (line[0] == '\0')
+        return (1);
+    
+    if (ft_strncmp(line, "NO ", 3) == 0 || ft_strncmp(line, "SO ", 3) == 0 ||
+        ft_strncmp(line, "WE ", 3) == 0 || ft_strncmp(line, "EA ", 3) == 0)
+        return parse_texture_line(line, game);
+    
+    if (line[0] == 'F' || line[0] == 'C')
+        return parse_floor_ceiling(line, game);
+    
+    return process_map_line(line, map_start, i);
+}
+
 int parse_map_file(const char *filename, t_game *game)
 {
     int     fd;
     char    **file_contents;
     int     i;
     int     map_start;
+    char    *line;
 
     fd = open(filename, O_RDONLY);
     if (fd < 0)
@@ -228,82 +277,21 @@ int parse_map_file(const char *filename, t_game *game)
     if (!file_contents)
         return (0);
 
-    // Parse file contents
     i = 0;
     map_start = -1;
     while (file_contents[i])
     {
-        char *line = ft_strtrim(file_contents[i], " \t\n\r\v\f");
-        if (!line)
-        {
-            free_array(file_contents);
-            return (0);
-        }
-
-        // Skip empty lines
-        if (line[0] == '\0')
+        line = ft_strtrim(file_contents[i], " \t\n\r\v\f");
+        if (!line || !parse_line_content(line, game, &map_start, i))
         {
             free(line);
-            i++;
-            continue;
-        }
-
-        // Parse textures and colors
-        if (ft_strncmp(line, "NO ", 3) == 0)
-        {
-            if (!parse_texture_path(line, &game->north_texture))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (ft_strncmp(line, "SO ", 3) == 0)
-        {
-            if (!parse_texture_path(line, &game->south_texture))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (ft_strncmp(line, "WE ", 3) == 0)
-        {
-            if (!parse_texture_path(line, &game->west_texture))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (ft_strncmp(line, "EA ", 3) == 0)
-        {
-            if (!parse_texture_path(line, &game->east_texture))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (line[0] == 'F' || line[0] == 'C')
-        {
-            if (!parse_floor_ceiling(line, game))
-            {
-                free(line);
-                free_array(file_contents);
-                return (0);
-            }
-        }
-        else if (ft_strchr("01NSEW ", line[0]))
-        {
-            if (map_start == -1)
-                map_start = i;
+            free_array(file_contents);
+            return (0);
         }
         free(line);
         i++;
     }
 
-    // Parse map after all other elements
     if (map_start == -1 || !parse_map_content(game, file_contents, map_start))
     {
         free_array(file_contents);

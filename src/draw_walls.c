@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 12:24:30 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 12:24:32 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/20 20:49:27 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,7 @@ void draw_textured_wall(t_game *game, t_ray *ray, int x)
 {
     t_texture   *tex;
     int         tex_x;
+    int         tex_y;
     int         line_height;
     int         draw_start;
     int         draw_end;
@@ -45,14 +46,22 @@ void draw_textured_wall(t_game *game, t_ray *ray, int x)
     double      step;
     double      tex_pos;
 
+    // Get the appropriate texture based on which wall was hit
     tex = get_wall_texture(game, ray);
+
+    // Calculate where exactly the wall was hit
     calculate_wall_x(ray, &game->player);
-    tex_x = (int)(ray->wall_x * tex->width);
+
+    // Calculate x coordinate on the texture
+    tex_x = (int)(ray->wall_x * TEX_WIDTH);
     if ((ray->side == 0 && ray->dir_x > 0) ||
         (ray->side == 1 && ray->dir_y < 0))
-        tex_x = tex->width - tex_x - 1;
+        tex_x = TEX_WIDTH - tex_x - 1;
 
+    // Calculate the height of the line to draw
     line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
+
+    // Calculate lowest and highest pixel to fill in current stripe
     draw_start = -line_height / 2 + WINDOW_HEIGHT / 2;
     if (draw_start < 0)
         draw_start = 0;
@@ -60,18 +69,28 @@ void draw_textured_wall(t_game *game, t_ray *ray, int x)
     if (draw_end >= WINDOW_HEIGHT)
         draw_end = WINDOW_HEIGHT - 1;
 
-    step = 1.0 * tex->height / line_height;
+    // Calculate step for texture coordinate
+    step = 1.0 * TEX_HEIGHT / line_height;
+    // Starting texture coordinate
     tex_pos = (draw_start - WINDOW_HEIGHT / 2 + line_height / 2) * step;
 
+    // Draw the vertical stripe
     y = draw_start;
     while (y < draw_end)
     {
-        int tex_y = (int)tex_pos & (tex->height - 1);
+        // Cast tex_pos to integer and ensure it stays within bounds
+        tex_y = (int)tex_pos & (TEX_HEIGHT - 1);
         tex_pos += step;
+
+        // Get color from texture
         unsigned int color = get_texture_color(tex, tex_x, tex_y);
+
+        // Make sides darker for depth effect
         if (ray->side == 1)
-            color = (color >> 1) & 8355711; // Make sides darker
-        my_mlx_pixel_put(&game->img, x, y, color);
+            color = (color >> 1) & 8355711;
+
+        // Draw the pixel
+        my_mlx_pixel_put(game, x, y, color);
         y++;
     }
 } 

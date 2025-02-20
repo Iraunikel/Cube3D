@@ -39,6 +39,10 @@
 # define TEX_CEIL  5
 # define NUM_TEXTURES 6
 
+// Add these texture resolution constants
+#define TEX_WIDTH 512    // Increased from typical 64
+#define TEX_HEIGHT 512   // Increased from typical 64
+
 // Forward declarations of structs
 typedef struct s_game t_game;
 typedef struct s_texture t_texture;
@@ -147,6 +151,24 @@ typedef struct s_floor_calc
     double  floor_x;
     double  floor_y;
 } t_floor_calc;
+
+typedef struct s_wall_data
+{
+    int x;
+    int y;
+    int draw_start;
+    int draw_end;
+    double step;
+    int tex_x;
+    double tex_pos;
+} t_wall_data;
+
+typedef struct s_wall_render
+{
+    t_game *game;
+    t_ray *ray;
+    t_texture *tex;
+} t_wall_render;
 
 // Function prototypes
 int     validate_file_extension(const char *filename);
