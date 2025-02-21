@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 21:56:10 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/02/21 13:10:11 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -364,44 +364,38 @@ void	draw_3d_view(t_game *game, t_ray *ray, int x)
 	draw_textured_wall(game, ray, screen_x);
 }
 
-static void calculate_floor_position(double *ray_dir, int x, int y, t_floor_calc *calc)
+static void calculate_floor_position(int x, int y, t_floor_calc *calc)
 {
-    double ray_dir_x0 = ray_dir[0];
-    double ray_dir_y0 = ray_dir[1];
-    double ray_dir_x1 = ray_dir[2];
-    double ray_dir_y1 = ray_dir[3];
-    double p = y - WINDOW_HEIGHT / 2.0;
-    double pos_z = 0.5 * WINDOW_HEIGHT;
-    double row_distance = pos_z / p;
-    double floor_step_x = row_distance * (ray_dir_x1 - ray_dir_x0) / WINDOW_WIDTH;
-    double floor_step_y = row_distance * (ray_dir_y1 - ray_dir_y0) / WINDOW_WIDTH;
-    calc->floor_x = calc->player_x + row_distance * ray_dir_x0;
-    calc->floor_y = calc->player_y + row_distance * ray_dir_y0;
-    double relative_x = x - WINDOW_WIDTH / 2.0;
-    calc->floor_x += floor_step_x * relative_x;
-    calc->floor_y += floor_step_y * relative_x;
+    // Calculate ray direction
+    double camera_x = 2.0 * x / (double)WINDOW_WIDTH - 1.0;
+    double ray_dir_x = calc->game->player.dir_x + calc->game->player.plane_x * camera_x;
+    double ray_dir_y = calc->game->player.dir_y + calc->game->player.plane_y * camera_x;
+
+    // Current y position compared to the center of the screen
+    double ray_dir_z = (WINDOW_HEIGHT / 2.0) / (y - WINDOW_HEIGHT / 2.0);
+
+    // Real world coordinates
+    calc->floor_x = calc->player_x + ray_dir_x * ray_dir_z;
+    calc->floor_y = calc->player_y + ray_dir_y * ray_dir_z;
 }
 
 static void get_texture_coordinates(t_texture *tex, t_floor_calc *calc, int *tex_coords)
 {
-    double fx = calc->floor_x - floor(calc->floor_x);
-    double fy = calc->floor_y - floor(calc->floor_y);
-    if (fx < 0)
-		fx += 1.0;
-    if (fy < 0)
-		fy += 1.0;
-    tex_coords[0] = (int)(tex->width * fx) & (tex->width - 1);
-    tex_coords[1] = (int)(tex->height * fy) & (tex->height - 1);
-}
-
-static void calculate_ray_directions(t_game *game, double *ray_dir)
-{
-    double camera_plane_x = game->player.plane_x;
-    double camera_plane_y = game->player.plane_y;
-    ray_dir[0] = game->player.dir_x - camera_plane_x;
-    ray_dir[1] = game->player.dir_y - camera_plane_y;
-    ray_dir[2] = game->player.dir_x + camera_plane_x;
-    ray_dir[3] = game->player.dir_y + camera_plane_y;
+    // Get the exact integer cell the ray is in
+    int cell_x = (int)(calc->floor_x);
+    int cell_y = (int)(calc->floor_y);
+    
+    // Get the exact position inside the cell (0-1 value)
+    double fx = calc->floor_x - cell_x;
+    double fy = calc->floor_y - cell_y;
+    
+    // Convert to texture coordinates
+    tex_coords[0] = (int)(fx * tex->width);
+    tex_coords[1] = (int)(fy * tex->height);
+    
+    // Ensure we stay within texture bounds
+    tex_coords[0] = (tex_coords[0] + tex->width) % tex->width;
+    tex_coords[1] = (tex_coords[1] + tex->height) % tex->height;
 }
 
 static void get_ceiling_texture_coordinates(t_texture *tex, t_game *game, int x, int y, int *tex_coords)
@@ -446,7 +440,6 @@ static void apply_distance_darkening(int *r, int *g, int *b, int y, int is_ceili
 
 static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceiling, t_texture **tex, int *tex_coords)
 {
-    double ray_dir[4];
     t_floor_calc calc;
 
     if (is_ceiling == 1)
@@ -458,8 +451,8 @@ static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceili
     {
         calc.player_x = game->player.x;
         calc.player_y = game->player.y;
-        calculate_ray_directions(game, ray_dir);
-        calculate_floor_position(ray_dir, x, y, &calc);
+        calc.game = game;  // Add game pointer to access player direction
+        calculate_floor_position(x, y, &calc);
         *tex = &game->textures[TEX_FLOOR];
         get_texture_coordinates(*tex, &calc, tex_coords);
     }

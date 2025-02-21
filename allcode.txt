@@ -1,0 +1,2100 @@
+#ifndef STRUCT_H
+#define STRUCT_H
+
+#include "../libft/libft.h"
+#include "../minilibx_opengl_20191021/mlx.h"
+#include <stdio.h>
+#include <math.h>
+#include <time.h>
+
+// Window dimensions
+# define WINDOW_WIDTH 1000
+# define WINDOW_HEIGHT 1000
+
+// Key codes for MacOS
+# define KEY_ESC 53
+# define KEY_W 13
+# define KEY_A 0
+# define KEY_S 1
+# define KEY_D 2
+# define KEY_LEFT 123
+# define KEY_RIGHT 124
+# define KEY_UP 126
+# define KEY_DOWN 125
+
+// Movement constants
+# define MOVE_SPEED 0.1
+# define ROT_SPEED 0.1
+# define MAX_SPEED 0.15
+# define ACCELERATION 0.01
+# define DECELERATION 0.008
+# define MAX_ROT_SPEED 0.12
+
+// Texture indices
+# define TEX_NORTH 0
+# define TEX_SOUTH 1
+# define TEX_EAST  2
+# define TEX_WEST  3
+# define TEX_FLOOR 4
+# define TEX_CEIL  5
+# define NUM_TEXTURES 6
+
+// Add these texture resolution constants
+#define TEX_WIDTH 512    // Increased from typical 64
+#define TEX_HEIGHT 512   // Increased from typical 64
+
+// Forward declarations of structs
+typedef struct s_game t_game;
+typedef struct s_texture t_texture;
+typedef struct s_player t_player;
+typedef struct s_map t_map;
+typedef struct s_ray t_ray;
+typedef struct s_color t_color;
+
+// Error handling
+void    error_exit(const char *message);
+
+typedef struct s_color
+{
+    int r;
+    int g;
+    int b;
+} t_color;
+
+typedef struct s_texture
+{
+    void    *img;
+    char    *addr;
+    int     width;
+    int     height;
+    int     bits_per_pixel;
+    int     line_length;
+    int     endian;
+} t_texture;
+
+typedef struct s_player
+{
+    double  x;
+    double  y;
+    double  dir_x;     // Direction vector X (where player is looking)
+    double  dir_y;     // Direction vector Y
+    double  plane_x;   // Camera plane X (for FOV)
+    double  plane_y;   // Camera plane Y
+    double  hitbox_radius;  // Player's hitbox radius
+    double  wall_buffer;    // Minimum distance from walls
+    int     move_w;    // Forward
+    int     move_s;    // Backward
+    int     move_a;    // Strafe left
+    int     move_d;    // Strafe right
+    int     rot_left;  // Turn left (arrow)
+    int     rot_right; // Turn right (arrow)
+} t_player;
+
+typedef struct s_map
+{
+    char    **map;
+    int     width;
+    int     height;
+} t_map;
+
+typedef struct s_ray
+{
+    double  pos_x;      // Ray position X
+    double  pos_y;      // Ray position Y
+    double  dir_x;      // Ray direction X
+    double  dir_y;      // Ray direction Y
+    double  delta_dist_x;   // Length of ray from one x-side to next
+    double  delta_dist_y;   // Length of ray from one y-side to next
+    int     map_x;      // Which box of the map we're in
+    int     map_y;
+    double  side_dist_x;    // Length of ray from current pos to next x-side
+    double  side_dist_y;    // Length of ray from current pos to next y-side
+    int     step_x;     // What direction to step in x direction (+1 or -1)
+    int     step_y;     // What direction to step in y direction (+1 or -1)
+    int     hit;        // Was there a wall hit?
+    int     side;       // Was a NS or a EW wall hit?
+    double  perp_wall_dist; // Perpendicular wall distance
+    double  wall_x;     // Where exactly the wall was hit
+} t_ray;
+
+typedef struct s_game
+{
+    void        *mlx;
+    void        *win;
+    void        *img;
+    char        *addr;
+    int         bits_per_pixel;
+    int         line_length;
+    int         endian;
+    t_player    player;
+    t_map       map;
+    t_color     ceiling_color;
+    t_color     floor_color;
+    char        *north_texture;
+    char        *south_texture;
+    char        *west_texture;
+    char        *east_texture;
+    char        *floor_texture;    // New: path to floor texture
+    char        *ceiling_texture;  // New: path to ceiling texture
+    t_texture   textures[NUM_TEXTURES];  // Expanded array to store all textures
+    int         use_texture_floor;   // Flag to use texture instead of color for floor
+    int         use_texture_ceiling; // Flag to use texture instead of color for ceiling
+} t_game;
+
+typedef struct s_floor_calc
+{
+    double  player_x;
+    double  player_y;
+    double  row_distance;
+    double  floor_step_x;
+    double  floor_step_y;
+    double  floor_x;
+    double  floor_y;
+    t_game  *game;    // Add game pointer
+} t_floor_calc;
+
+typedef struct s_wall_data
+{
+    int x;
+    int y;
+    int draw_start;
+    int draw_end;
+    double step;
+    int tex_x;
+    double tex_pos;
+} t_wall_data;
+
+typedef struct s_wall_render
+{
+    t_game *game;
+    t_ray *ray;
+    t_texture *tex;
+} t_wall_render;
+
+// Function prototypes
+int     validate_file_extension(const char *filename);
+int     init_game(t_game *game);
+int     parse_map_file(const char *filename, t_game *game);
+void    cleanup_game(t_game *game);
+void    print_game_state(t_game *game);
+char    *get_next_line(int fd);
+void    load_textures(t_game *game);
+unsigned int get_texture_color(t_texture *tex, int x, int y);
+
+// Movement prototypes
+int     key_press(int keycode, t_game *game);
+int     key_release(int keycode, t_game *game);
+int     game_loop(t_game *game);
+void    move_player(t_game *game);
+
+// Raycasting functions
+void    calculate_ray_dir(t_ray *ray, t_player *player, double camera_x);
+void    cast_rays(t_game *game);
+void    draw_ray_2d(t_game *game, t_ray *ray);
+void    draw_3d_view(t_game *game, t_ray *ray, int x);
+void    init_dda(t_ray *ray);
+void    perform_dda(t_ray *ray, t_game *game);
+void    draw_textured_wall(t_game *game, t_ray *ray, int x);
+
+
+#endif#include "../includes/cube3d.h"
+#include <../minilibx_opengl_20191021/mlx.h>
+
+static int init_mlx(t_game *game)
+{
+    game->mlx = mlx_init();
+    if (!game->mlx)
+        return (0);
+    game->win = mlx_new_window(game->mlx, 1000, 1000, "Cube3D");
+    if (!game->win)
+    {
+        free(game->mlx);
+        return (0);
+    }
+    return (1);
+}
+
+static int init_image(t_game *game)
+{
+    game->img = mlx_new_image(game->mlx, 1000, 1000);
+    if (!game->img)
+    {
+        mlx_destroy_window(game->mlx, game->win);
+        free(game->mlx);
+        return (0);
+    }
+    game->addr = mlx_get_data_addr(game->img, &game->bits_per_pixel,
+                                  &game->line_length, &game->endian);
+    return (1);
+}
+
+static void init_map_and_player(t_game *game)
+{
+    game->player.x = 0;
+    game->player.y = 0;
+    game->player.hitbox_radius = 0.2;  // 20% of a tile
+    game->player.wall_buffer = 0.1;    // 10% of a tile
+    game->map.map = NULL;
+    game->map.width = 0;
+    game->map.height = 0;
+}
+
+static void init_colors_and_textures(t_game *game)
+{
+    // Initialize colors with default values
+    game->ceiling_color = (t_color){135, 206, 235};  // Light sky blue
+    game->floor_color = (t_color){139, 69, 19};      // Saddle brown
+    
+    // Initialize texture pointers to NULL
+    game->north_texture = NULL;
+    game->south_texture = NULL;
+    game->west_texture = NULL;
+    game->east_texture = NULL;
+    game->floor_texture = NULL;
+    game->ceiling_texture = NULL;
+    game->use_texture_floor = 0;
+    game->use_texture_ceiling = 0;
+}
+
+int init_game(t_game *game)
+{
+    if (!init_mlx(game))
+        return (0);
+    if (!init_image(game))
+        return (0);
+    init_map_and_player(game);
+    init_colors_and_textures(game);
+    return (1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   render.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/21 13:10:11 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../includes/cube3d.h"
+
+static void	my_mlx_pixel_put(t_game *game, int x, int y, int color)
+{
+	char	*dst;
+
+	if (x < 0 || x >= WINDOW_WIDTH || y < 0 || y >= WINDOW_HEIGHT)
+		return ;
+	dst = game->addr + (y * game->line_length + x * (game->bits_per_pixel / 8));
+	*(unsigned int *)dst = color;
+}
+
+static void	draw_square(t_game *game, int x, int y, int color)
+{
+	int	i;
+	int	j;
+	int	size;
+	int	start_x;
+	int	start_y;
+
+	size = 25;
+	start_x = x * size + (WINDOW_WIDTH / 4 - (game->map.width * size) / 2);
+	start_y = y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size) / 2);
+	i = 0;
+	while (i < size - 1)
+	{
+		j = 0;
+		while (j < size - 1)
+		{
+			my_mlx_pixel_put(game, start_x + i, start_y + j, color);
+			j++;
+		}
+		i++;
+	}
+}
+
+static void	draw_player_position(t_game *game, int px, int py)
+{
+	int	i;
+	int	j;
+
+	i = -2;
+	while (i < 3)
+	{
+		j = -2;
+		while (j < 3)
+		{
+			my_mlx_pixel_put(game, px + i, py + j, 0xFF0000);
+			j++;
+		}
+		i++;
+	}
+}
+
+static void	draw_player_direction(t_game *game, int px, int py)
+{
+	int		line_length;
+	double	dir_x;
+	double	dir_y;
+	int		i;
+
+	line_length = 15;
+	dir_x = game->player.dir_x * line_length;
+	dir_y = game->player.dir_y * line_length;
+	i = 0;
+	while (i < line_length)
+	{
+		my_mlx_pixel_put(game, px + (int)(dir_x * i / line_length), py
+			+ (int)(dir_y * i / line_length), 0x00FF00);
+		i++;
+	}
+}
+
+static void	draw_player(t_game *game)
+{
+	int	size;
+	int	px;
+	int	py;
+
+	size = 25;
+	px = (int)(game->player.x * size + (WINDOW_WIDTH / 4 - (game->map.width
+					* size) / 2));
+	py = (int)(game->player.y * size + (WINDOW_HEIGHT / 2 - (game->map.height
+					* size) / 2));
+	draw_player_position(game, px, py);
+	draw_player_direction(game, px, py);
+}
+
+static void	draw_map(t_game *game)
+{
+	int	x;
+	int	y;
+
+	y = 0;
+	while (y < game->map.height)
+	{
+		x = 0;
+		while (x < game->map.width)
+		{
+			if (game->map.map[y][x] == '1')
+				draw_square(game, x, y, 0xFFFFFF);
+			else if (game->map.map[y][x] == '0' || ft_strchr("NSEW",
+					game->map.map[y][x]))
+				draw_square(game, x, y, 0x333333);
+			x++;
+		}
+		y++;
+	}
+	draw_player(game);
+}
+
+static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
+{
+	double	delta_x;
+	double	delta_y;
+	double	step;
+	double	x;
+	double	y;
+	int		i;
+
+	delta_x = x2 - x1;
+	delta_y = y2 - y1;
+	if (fabs(delta_x) > fabs(delta_y))
+		step = fabs(delta_x);
+	else
+		step = fabs(delta_y);
+	delta_x /= step;
+	delta_y /= step;
+	x = x1;
+	y = y1;
+	i = 0;
+	while (i <= step)
+	{
+		my_mlx_pixel_put(game, (int)x, (int)y, color);
+		x += delta_x;
+		y += delta_y;
+		i++;
+	}
+}
+
+static void	calculate_hit_point(t_ray *ray, double *hit_x, double *hit_y)
+{
+	*hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
+	*hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
+}
+
+static void	calculate_screen_coords(t_game *game, t_ray *ray, int size,
+		int coords[4])
+{
+	double	hit_x;
+	double	hit_y;
+
+	calculate_hit_point(ray, &hit_x, &hit_y);
+	coords[0] = ray->pos_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
+			/ 2);
+	coords[1] = ray->pos_y * size + (WINDOW_HEIGHT / 2 - (game->map.height
+				* size) / 2);
+	coords[2] = hit_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
+			/ 2);
+	coords[3] = hit_y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size)
+			/ 2);
+}
+
+void	draw_ray_2d(t_game *game, t_ray *ray)
+{
+	int	size;
+	int	coords[4];
+
+	size = 25;
+	calculate_screen_coords(game, ray, size, coords);
+	if (coords[0] >= 0 && coords[0] < WINDOW_WIDTH / 2 && coords[1] >= 0
+		&& coords[1] < WINDOW_HEIGHT && coords[2] >= 0
+		&& coords[2] < WINDOW_WIDTH / 2 && coords[3] >= 0
+		&& coords[3] < WINDOW_HEIGHT)
+	{
+		draw_line(game, coords[0], coords[1], coords[2], coords[3], 0x0000FF);
+	}
+}
+
+static void	calculate_line_dimensions(t_ray *ray, int *line_height,
+		int *draw_start, int *draw_end)
+{
+	if (ray->perp_wall_dist < 0.1)
+		*line_height = WINDOW_HEIGHT;
+	else
+		*line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
+	*draw_start = (WINDOW_HEIGHT - *line_height) / 2;
+	if (*draw_start < 0)
+		*draw_start = 0;
+	*draw_end = (WINDOW_HEIGHT + *line_height) / 2;
+	if (*draw_end >= WINDOW_HEIGHT)
+		*draw_end = WINDOW_HEIGHT - 1;
+}
+
+static t_texture *get_wall_texture(t_game *game, t_ray *ray)
+{
+	if (ray->side == 0)
+	{
+		if (ray->dir_x > 0)
+			return (&game->textures[2]);
+		return (&game->textures[3]);
+	}
+	if (ray->dir_y > 0)
+		return (&game->textures[1]);
+	return (&game->textures[0]);
+}
+
+static void calculate_wall_x(t_ray *ray, t_player *player)
+{
+	if (ray->side == 0)
+		ray->wall_x = player->y + ray->perp_wall_dist * ray->dir_y;
+	else
+		ray->wall_x = player->x + ray->perp_wall_dist * ray->dir_x;
+	ray->wall_x -= floor(ray->wall_x);
+}
+
+static void calculate_tex_x(t_ray *ray, t_texture *tex, int *tex_x)
+{
+	*tex_x = (int)(ray->wall_x * (double)tex->width);
+	if ((ray->side == 0 && ray->dir_x > 0) || (ray->side == 1 && ray->dir_y < 0))
+		*tex_x = tex->width - *tex_x - 1;
+	if (*tex_x < 0)
+		*tex_x = 0;
+	if (*tex_x >= tex->width)
+		*tex_x = tex->width - 1;
+}
+
+static void calculate_tex_pos(int line_height, int draw_start, double *tex_pos, double step)
+{
+	*tex_pos = (draw_start - WINDOW_HEIGHT / 2 + line_height / 2) * step;
+	*tex_pos += 0.00001;
+}
+
+static double calculate_step(int line_height, int tex_height)
+{
+	return 1.0 * (double)tex_height / (double)line_height;
+}
+
+static void apply_lighting_factors(int *r, int *g, int *b, double dist_factor)
+{
+	*r = (int)(*r * dist_factor);
+	*g = (int)(*g * dist_factor);
+	*b = (int)(*b * dist_factor);
+	if (*r < 0)
+		*r = 0;
+	if (*r > 255)
+		*r = 255;
+	if (*g < 0)
+		*g = 0;
+	if (*g > 255)
+		*g = 255;
+	if (*b < 0)
+		*b = 0;
+	if (*b > 255)
+		*b = 255;
+}
+
+static void calculate_dist_factor(t_ray *ray, double *dist_factor, int y)
+{
+	*dist_factor = 1.0;
+	if (ray->perp_wall_dist > 1.0)
+	{
+		*dist_factor = 1.0 / (1.0 + (ray->perp_wall_dist - 1.0) * 0.5);
+		*dist_factor = fmax(0.2, *dist_factor);
+	}
+	if (ray->side == 1)
+	{
+		double side_factor = 0.6 + 0.4 * (1.0 - fabs(ray->dir_y));
+		*dist_factor *= side_factor;
+	}
+	double height_factor = 1.0 - fabs((double)(y - WINDOW_HEIGHT / 2) / (double)WINDOW_HEIGHT) * 0.2;
+	*dist_factor *= height_factor;
+	*dist_factor *= 0.85;
+}
+
+static void clamp_tex_y(int *tex_y, int height)
+{
+    if (*tex_y < 0)
+        *tex_y = 0;
+    if (*tex_y >= height)
+        *tex_y = height - 1;
+}
+
+static void extract_rgb(unsigned int color, int *r, int *g, int *b)
+{
+    *r = (color >> 16) & 0xFF;
+    *g = (color >> 8) & 0xFF;
+    *b = color & 0xFF;
+}
+
+static unsigned int combine_rgb(int r, int g, int b)
+{
+    return (r << 16) | (g << 8) | b;
+}
+
+static void process_wall_pixel(t_wall_render *render, t_wall_data *data)
+{
+    int tex_y;
+    unsigned int color;
+    int rgb[3];
+    double dist_factor;
+
+    tex_y = (int)data->tex_pos & (render->tex->height - 1);
+    clamp_tex_y(&tex_y, render->tex->height);
+    color = get_texture_color(render->tex, data->tex_x, tex_y);
+    extract_rgb(color, &rgb[0], &rgb[1], &rgb[2]);
+    calculate_dist_factor(render->ray, &dist_factor, data->y);
+    apply_lighting_factors(&rgb[0], &rgb[1], &rgb[2], dist_factor);
+    color = combine_rgb(rgb[0], rgb[1], rgb[2]);
+    my_mlx_pixel_put(render->game, data->x, data->y, color);
+}
+
+void draw_wall_segment(t_game *game, t_ray *ray, t_texture *tex, t_wall_data *data)
+{
+    t_wall_render render;
+
+    render.game = game;
+    render.ray = ray;
+    render.tex = tex;
+    data->y = data->draw_start;
+    while (data->y < data->draw_end)
+    {
+        process_wall_pixel(&render, data);
+        data->tex_pos += data->step;
+        data->y++;
+    }
+}
+
+void	draw_textured_wall(t_game *game, t_ray *ray, int x)
+{
+	t_texture   *tex;
+	t_wall_data data;
+	int         line_height;
+
+	tex = get_wall_texture(game, ray);
+	calculate_wall_x(ray, &game->player);
+	ray->wall_x -= floor(ray->wall_x);
+	ray->wall_x = fmax(0.0, fmin(1.0, ray->wall_x));
+	calculate_tex_x(ray, tex, &data.tex_x);
+	calculate_line_dimensions(ray, &line_height, &data.draw_start, &data.draw_end);
+	data.step = calculate_step(line_height, tex->height);
+	calculate_tex_pos(line_height, data.draw_start, &data.tex_pos, data.step);
+	data.x = x;
+	draw_wall_segment(game, ray, tex, &data);
+}
+
+void	draw_3d_view(t_game *game, t_ray *ray, int x)
+{
+	int screen_x;
+
+	screen_x = x + WINDOW_WIDTH / 2;
+	draw_textured_wall(game, ray, screen_x);
+}
+
+static void calculate_floor_position(int x, int y, t_floor_calc *calc)
+{
+    // Calculate ray direction
+    double camera_x = 2.0 * x / (double)WINDOW_WIDTH - 1.0;
+    double ray_dir_x = calc->game->player.dir_x + calc->game->player.plane_x * camera_x;
+    double ray_dir_y = calc->game->player.dir_y + calc->game->player.plane_y * camera_x;
+
+    // Current y position compared to the center of the screen
+    double ray_dir_z = (WINDOW_HEIGHT / 2.0) / (y - WINDOW_HEIGHT / 2.0);
+
+    // Real world coordinates
+    calc->floor_x = calc->player_x + ray_dir_x * ray_dir_z;
+    calc->floor_y = calc->player_y + ray_dir_y * ray_dir_z;
+}
+
+static void get_texture_coordinates(t_texture *tex, t_floor_calc *calc, int *tex_coords)
+{
+    // Get the exact integer cell the ray is in
+    int cell_x = (int)(calc->floor_x);
+    int cell_y = (int)(calc->floor_y);
+    
+    // Get the exact position inside the cell (0-1 value)
+    double fx = calc->floor_x - cell_x;
+    double fy = calc->floor_y - cell_y;
+    
+    // Convert to texture coordinates
+    tex_coords[0] = (int)(fx * tex->width);
+    tex_coords[1] = (int)(fy * tex->height);
+    
+    // Ensure we stay within texture bounds
+    tex_coords[0] = (tex_coords[0] + tex->width) % tex->width;
+    tex_coords[1] = (tex_coords[1] + tex->height) % tex->height;
+}
+
+static void get_ceiling_texture_coordinates(t_texture *tex, t_game *game, int x, int y, int *tex_coords)
+{
+    double dir_x = game->player.dir_x;
+    double dir_y = game->player.dir_y;
+    double angle = atan2(dir_y, dir_x);
+    if (angle < 0)
+		angle += 2 * M_PI;
+    double tx = (angle / (2 * M_PI) + (double)x / WINDOW_WIDTH) * tex->width;
+    double ty = ((double)y / (WINDOW_HEIGHT / 2)) * tex->height;
+    tex_coords[0] = ((int)tx) & (tex->width - 1);
+    tex_coords[1] = ((int)ty) & (tex->height - 1);
+}
+
+static void apply_distance_darkening(int *r, int *g, int *b, int y, int is_ceiling)
+{
+    if (!is_ceiling)
+    {
+        double relative_y = (double)(y - WINDOW_HEIGHT / 2) / (WINDOW_HEIGHT / 2);
+        double floor_dist = 1.0 - relative_y;
+        double dist_factor = 1.0 - (floor_dist * 0.7);
+        dist_factor = fmax(0.2, dist_factor);
+        dist_factor *= 0.85;
+        *r = (int)(*r * dist_factor);
+        *g = (int)(*g * dist_factor);
+        *b = (int)(*b * dist_factor);
+        if (*r < 0)
+			*r = 0;
+        if (*r > 255)
+			*r = 255;
+        if (*g < 0)
+			*g = 0;
+        if (*g > 255)
+			*g = 255;
+        if (*b < 0)
+			*b = 0;
+        if (*b > 255)
+			*b = 255;
+    }
+}
+
+static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceiling, t_texture **tex, int *tex_coords)
+{
+    t_floor_calc calc;
+
+    if (is_ceiling == 1)
+    {
+        *tex = &game->textures[TEX_CEIL];
+        get_ceiling_texture_coordinates(*tex, game, x, y, tex_coords);
+    }
+    else
+    {
+        calc.player_x = game->player.x;
+        calc.player_y = game->player.y;
+        calc.game = game;  // Add game pointer to access player direction
+        calculate_floor_position(x, y, &calc);
+        *tex = &game->textures[TEX_FLOOR];
+        get_texture_coordinates(*tex, &calc, tex_coords);
+    }
+}
+
+static void apply_color_and_draw(t_game *game, int x, int y, int is_ceiling, t_texture *tex, int *tex_coords)
+{
+    unsigned int color = get_texture_color(tex, tex_coords[0], tex_coords[1]);
+    int r = (color >> 16) & 0xFF;
+    int g = (color >> 8) & 0xFF;
+    int b = color & 0xFF;
+    apply_distance_darkening(&r, &g, &b, y, is_ceiling);
+    color = (r << 16) | (g << 8) | b;
+    my_mlx_pixel_put(game, x, y, color);
+}
+
+static void draw_textured_floor_ceiling(t_game *game, int x, int y, int is_ceiling)
+{
+    t_texture *tex;
+    int tex_coords[2];
+
+    get_texture_and_coordinates(game, x, y, is_ceiling, &tex, tex_coords);
+    apply_color_and_draw(game, x, y, is_ceiling, tex, tex_coords);
+}
+
+static void draw_ceiling_section(t_game *game, int x, int y)
+{
+    if (game->use_texture_ceiling == 1)
+    {
+        draw_textured_floor_ceiling(game, x, y, 1);
+        return;
+    }
+    int r = game->ceiling_color.r;
+    int g = game->ceiling_color.g;
+    int b = game->ceiling_color.b;
+    apply_distance_darkening(&r, &g, &b, y, 1);
+    int ceiling_color = (r << 16) | (g << 8) | b;
+    my_mlx_pixel_put(game, x, y, ceiling_color);
+}
+
+static void draw_floor_section(t_game *game, int x, int y)
+{
+    if (game->use_texture_floor == 1)
+    {
+        draw_textured_floor_ceiling(game, x, y, 0);
+        return;
+    }
+    int r = game->floor_color.r;
+    int g = game->floor_color.g;
+    int b = game->floor_color.b;
+    apply_distance_darkening(&r, &g, &b, y, 0);
+    int floor_color = (r << 16) | (g << 8) | b;
+    my_mlx_pixel_put(game, x, y, floor_color);
+}
+
+static void process_ceiling_floor_row(t_game *game, int y)
+{
+    int x;
+
+    x = WINDOW_WIDTH / 2;
+    while (x < WINDOW_WIDTH)
+    {
+        if (y < WINDOW_HEIGHT / 2)
+        {
+            draw_ceiling_section(game, x, y);
+        }
+        else
+        {
+            draw_floor_section(game, x, y);
+        }
+        x++;
+    }
+}
+
+static void draw_ceiling_floor(t_game *game)
+{
+    int y;
+
+    y = 0;
+    while (y < WINDOW_HEIGHT)
+    {
+        process_ceiling_floor_row(game, y);
+        y++;
+    }
+}
+
+int	game_loop(t_game *game)
+{
+	static int		frame_count = 0;
+	static clock_t	last_time = 0;
+	clock_t			current_time;
+
+	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel / 8));
+	move_player(game);
+	draw_ceiling_floor(game);
+	draw_map(game);
+	cast_rays(game);
+	frame_count++;
+	current_time = clock();
+	if (current_time - last_time >= CLOCKS_PER_SEC)
+	{
+		printf("FPS: %d\n", frame_count);
+		frame_count = 0;
+		last_time = current_time;
+	}
+	mlx_put_image_to_window(game->mlx, game->win, game->img, 0, 0);
+	return (0);
+}
+#include "../includes/cube3d.h"
+
+#define BUFFER_SIZE 4096
+
+static char	*resize_buffer(char *line, size_t *size, size_t i)
+{
+	char	*tmp;
+	size_t	j;
+
+	if (i < SIZE_MAX / 2)
+		*size *= 2;
+	else
+		*size = SIZE_MAX;
+	tmp = malloc(*size);
+	if (!tmp)
+	{
+		free(line);
+		return (NULL);
+	}
+	j = 0;
+	while (j < i)
+	{
+		tmp[j] = line[j];
+		j++;
+	}
+	free(line);
+	return (tmp);
+}
+
+static char	*process_line(char *line, char *buf, size_t *idx, size_t *i,
+		size_t *size, size_t *bytes_read)
+{
+	(void)bytes_read;
+    while (*i < *size - 1)
+	{
+		line[(*i)++] = buf[(*idx)++];
+		if (line[*i - 1] == '\n')
+			return (line);
+	}
+	line = resize_buffer(line, size, *i);
+	return (line);
+}
+
+static char	*read_and_process(int fd, char *line, char *buf, size_t size)
+{
+	static size_t	idx;
+	static size_t	bytes_read;
+	size_t			i;
+
+	i = 0;
+	while (1)
+	{
+		if (idx >= bytes_read)
+		{
+			bytes_read = read(fd, buf, BUFFER_SIZE);
+			if (bytes_read <= 0)
+				break ;
+			idx = 0;
+		}
+		line = process_line(line, buf, &idx, &i, &size, &bytes_read);
+		if (!line || (i > 0 && line[i - 1] == '\n'))
+			break ;
+	}
+	if (i == 0 || !line)
+	{
+		free(line);
+		return (NULL);
+	}
+	line[i] = '\0';
+	return (line);
+}
+
+char	*get_next_line(int fd)
+{
+	static char	buf[BUFFER_SIZE];
+	char		*line;
+	size_t		size;
+
+	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (NULL);
+	size = BUFFER_SIZE + 1;
+	line = malloc(size);
+	if (!line)
+		return (NULL);
+	return (read_and_process(fd, line, buf, size));
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   debug.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/17 20:16:18 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/17 20:16:20 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../includes/cube3d.h"
+
+static void print_color(const char *name, t_color color)
+{
+    printf("%s color: R(%d) G(%d) B(%d)\n", name, color.r, color.g, color.b);
+}
+
+static void print_map(t_map *map)
+{
+    int i;
+
+    printf("\nMap dimensions: %dx%d\n", map->width, map->height);
+    printf("Map content:\n");
+    i = 0;
+    while (i < map->height)
+    {
+        printf("%s\n", map->map[i]);
+        i++;
+    }
+}
+
+void    print_game_state(t_game *game)
+{
+    printf("\n=== GAME STATE DEBUG INFO ===\n");
+    printf("\nTexture paths:\n");
+    printf("North: %s\n", game->north_texture);
+    printf("South: %s\n", game->south_texture);
+    printf("West: %s\n", game->west_texture);
+    printf("East: %s\n", game->east_texture);
+    
+    printf("\nColors:\n");
+    print_color("Ceiling", game->ceiling_color);
+    print_color("Floor", game->floor_color);
+    
+    printf("\nPlayer position: (%.2f, %.2f)\n", game->player.x, game->player.y);
+    
+    print_map(&game->map);
+    printf("\n=== END DEBUG INFO ===\n\n");
+} #include "../../includes/cube3d.h"
+
+void    error_exit(const char *message)
+{
+    ft_putstr_fd("Error\n", 2);
+    ft_putstr_fd(message, 2);
+    ft_putstr_fd("\n", 2);
+    exit(1);
+} /* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   file_reader.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/19 15:39:00 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/19 15:39:02 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../includes/cube3d.h"
+
+int validate_file_extension(const char *filename)
+{
+    size_t  len;
+    char    *extension;
+
+    if (!filename)
+        return (0);
+    
+    len = ft_strlen(filename);
+    if (len < 5)  // Need at least "x.cub" (1 char + 4 chars extension)
+        return (0);
+    
+    extension = ft_strrchr(filename, '.');
+    if (!extension)
+        return (0);
+    
+    if (ft_strncmp(extension, ".cub", 4) != 0)
+        return (0);
+    
+    return (1);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   map_parser.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/19 15:39:08 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/20 21:51:16 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+
+#include "../includes/cube3d.h"
+#include "../libft/libft.h"
+#include <fcntl.h>
+#include <stdlib.h>
+
+static int parse_texture_path(char *line, char **texture_path)
+{
+    char *trimmed;
+
+    trimmed = ft_strtrim(line + 2, " \t\n\r\v\f");
+    if (!trimmed)
+        return (0);
+    *texture_path = trimmed;
+    return (1);
+}
+
+static void free_array(char **array)
+{
+    int i;
+
+    if (!array)
+        return;
+    i = 0;
+    while (array[i])
+    {
+        free(array[i]);
+        i++;
+    }
+    free(array);
+}
+
+static int parse_color(char *line, t_color *color)
+{
+    char    **rgb;
+    int     values[3];
+    int     i;
+
+    rgb = ft_split(line + 1, ',');
+    if (!rgb)
+        return (0);
+    
+    i = 0;
+    while (rgb[i] && i < 3)
+    {
+        values[i] = ft_atoi(rgb[i]);
+        if (values[i] < 0 || values[i] > 255)
+        {
+            free_array(rgb);
+            return (0);
+        }
+        i++;
+    }
+    
+    if (i != 3)
+    {
+        free_array(rgb);
+        return (0);
+    }
+    
+    color->r = values[0];
+    color->g = values[1];
+    color->b = values[2];
+
+    printf("Debug - Parsed color: R(%d) G(%d) B(%d)\n", color->r, color->g, color->b);
+
+    free_array(rgb);
+    return (1);
+}
+
+static int allocate_map(t_map *map, char **lines, int start_line)
+{
+    int i;
+    int max_width;
+
+    // Count number of lines for map height
+    i = start_line;
+    max_width = 0;
+    while (lines[i])
+    {
+        if (ft_strlen(lines[i]) > (size_t)max_width)
+            max_width = ft_strlen(lines[i]);
+        i++;
+    }
+    
+    map->height = i - start_line;
+    map->width = max_width;
+    
+    // Allocate map array
+    map->map = (char **)malloc(sizeof(char *) * (map->height + 1));
+    if (!map->map)
+        return (0);
+    map->map[map->height] = NULL;
+    
+    return (1);
+}
+
+static void find_player_position(t_game *game, int i)
+{
+    int j;
+
+    j = 0;
+    while (game->map.map[i][j])
+    {
+        if (ft_strchr("NSEW", game->map.map[i][j]))
+        {
+            game->player.x = j + 0.5;
+            game->player.y = i + 0.5;
+            break;
+        }
+        j++;
+    }
+}
+
+static int copy_map_line(t_game *game, char **lines, int i, int start_line)
+{
+    game->map.map[i] = ft_strdup(lines[start_line + i]);
+    if (!game->map.map[i])
+    {
+        while (--i >= 0)
+            free(game->map.map[i]);
+        free(game->map.map);
+        return (0);
+    }
+    find_player_position(game, i);
+    return (1);
+}
+
+static int parse_map_content(t_game *game, char **lines, int start_line)
+{
+    int i;
+    
+    if (!allocate_map(&game->map, lines, start_line))
+        return (0);
+    
+    i = 0;
+    while (i < game->map.height)
+    {
+        if (!copy_map_line(game, lines, i, start_line))
+            return (0);
+        i++;
+    }
+    return (1);
+}
+
+static char **read_file_contents(int fd)
+{
+    char    *line;
+    char    **contents;
+    int     line_count;
+    int     i;
+
+    // First count the lines
+    line_count = 0;
+    while ((line = get_next_line(fd)) != NULL)
+    {
+        free(line);
+        line_count++;
+    }
+    
+    // Allocate array for lines
+    contents = (char **)malloc(sizeof(char *) * (line_count + 1));
+    if (!contents)
+        return (NULL);
+    contents[line_count] = NULL;
+
+    // Reset file position and read lines
+    lseek(fd, 0, SEEK_SET);
+    i = 0;
+    while ((line = get_next_line(fd)) != NULL)
+    {
+        contents[i] = line;
+        i++;
+    }
+
+    return (contents);
+}
+
+static int parse_floor_ceiling(char *line, t_game *game)
+{
+    // Check if it's a texture path
+    if (line[1] == 'T')
+    {
+        if (line[0] == 'F')
+        {
+            game->use_texture_floor = 1;
+            return parse_texture_path(line + 1, &game->floor_texture);
+        }
+        else if (line[0] == 'C')
+        {
+            game->use_texture_ceiling = 1;
+            return parse_texture_path(line + 1, &game->ceiling_texture);
+        }
+        return (0);
+    }
+    // Otherwise, parse as color
+    else if (line[1] == ' ')
+    {
+        if (line[0] == 'F')
+        {
+            game->use_texture_floor = 0;
+            return parse_color(line, &game->floor_color);
+        }
+        else if (line[0] == 'C')
+        {
+            game->use_texture_ceiling = 0;
+            return parse_color(line, &game->ceiling_color);
+        }
+    }
+    return (0);
+}
+
+static int parse_texture_line(char *line, t_game *game)
+{
+    if (ft_strncmp(line, "NO ", 3) == 0)
+        return parse_texture_path(line, &game->north_texture);
+    if (ft_strncmp(line, "SO ", 3) == 0)
+        return parse_texture_path(line, &game->south_texture);
+    if (ft_strncmp(line, "WE ", 3) == 0)
+        return parse_texture_path(line, &game->west_texture);
+    if (ft_strncmp(line, "EA ", 3) == 0)
+        return parse_texture_path(line, &game->east_texture);
+    return (1);
+}
+
+static int process_map_line(char *line, int *map_start, int i)
+{
+    if (ft_strchr("01NSEW ", line[0]))
+    {
+        if (*map_start == -1)
+            *map_start = i;
+    }
+    return (1);
+}
+
+static int parse_line_content(char *line, t_game *game, int *map_start, int i)
+{
+    if (line[0] == '\0')
+        return (1);
+    
+    if (ft_strncmp(line, "NO ", 3) == 0 || ft_strncmp(line, "SO ", 3) == 0 ||
+        ft_strncmp(line, "WE ", 3) == 0 || ft_strncmp(line, "EA ", 3) == 0)
+        return parse_texture_line(line, game);
+    
+    if (line[0] == 'F' || line[0] == 'C')
+        return parse_floor_ceiling(line, game);
+    
+    return process_map_line(line, map_start, i);
+}
+
+int parse_map_file(const char *filename, t_game *game)
+{
+    int     fd;
+    char    **file_contents;
+    int     i;
+    int     map_start;
+    char    *line;
+
+    fd = open(filename, O_RDONLY);
+    if (fd < 0)
+        return (0);
+
+    file_contents = read_file_contents(fd);
+    close(fd);
+    if (!file_contents)
+        return (0);
+
+    i = 0;
+    map_start = -1;
+    while (file_contents[i])
+    {
+        line = ft_strtrim(file_contents[i], " \t\n\r\v\f");
+        if (!line || !parse_line_content(line, game, &map_start, i))
+        {
+            free(line);
+            free_array(file_contents);
+            return (0);
+        }
+        free(line);
+        i++;
+    }
+
+    if (map_start == -1 || !parse_map_content(game, file_contents, map_start))
+    {
+        free_array(file_contents);
+        return (0);
+    }
+
+    free_array(file_contents);
+    return (1);
+} /* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/17 22:44:44 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/19 23:49:46 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../includes/cube3d.h"
+
+static void	init_player_direction(t_game *game, char direction)
+{
+	game->player.dir_x = 0;
+	game->player.dir_y = 0;
+	game->player.plane_x = 0;
+	game->player.plane_y = 0;
+	if (direction == 'N')
+	{
+		game->player.dir_y = -1;
+		game->player.plane_x = 0.66;
+	}
+	else if (direction == 'S')
+	{
+		game->player.dir_y = 1;
+		game->player.plane_x = -0.66;
+	}
+	else if (direction == 'E')
+	{
+		game->player.dir_x = 1;
+		game->player.plane_y = 0.66;
+	}
+	else if (direction == 'W')
+	{
+		game->player.dir_x = -1;
+		game->player.plane_y = -0.66;
+	}
+}
+
+static int	close_window(t_game *game)
+{
+	cleanup_game(game);
+	exit(0);
+	return (0);
+}
+
+static int	validate_args(int argc, char **argv)
+{
+	if (argc != 2)
+	{
+		ft_putstr_fd("Error\nUsage: ./cub3D <map.cub>\n", 2);
+		return (0);
+	}
+	if (!validate_file_extension(argv[1]))
+	{
+		ft_putstr_fd("Error\nInvalid file extension. Must be .cub\n", 2);
+		return (0);
+	}
+	return (1);
+}
+
+static int	setup_game(t_game *game, char *map_file)
+{
+	if (!init_game(game))
+	{
+		ft_putstr_fd("Error\nFailed to initialize game\n", 2);
+		return (0);
+	}
+	printf("Game initialized successfully. Parsing map file...\n");
+	if (!parse_map_file(map_file, game))
+	{
+		cleanup_game(game);
+		return (0);
+	}
+	printf("Map file parsed successfully. Loading textures...\n");
+	load_textures(game);
+	return (1);
+}
+
+static void	setup_hooks(t_game *game)
+{
+	mlx_hook(game->win, 2, 1L << 0, key_press, game);
+	mlx_hook(game->win, 3, 1L << 1, key_release, game);
+	mlx_hook(game->win, 17, 0, close_window, game);
+	mlx_loop_hook(game->mlx, game_loop, game);
+}
+
+int	main(int argc, char **argv)
+{
+	t_game	game;
+
+	if (!validate_args(argc, argv))
+		return (1);
+	if (!setup_game(&game, argv[1]))
+		return (1);
+	printf("Map file parsed successfully. Setting up player...\n");
+	init_player_direction(&game,
+		game.map.map[(int)game.player.y][(int)game.player.x]);
+	setup_hooks(&game);
+	printf("Starting game loop...\n");
+	mlx_loop(game.mlx);
+	cleanup_game(&game);
+	return (0);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   player_move.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/20 15:56:28 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../includes/cube3d.h"
+
+static int	is_wall(t_game *game, double x, double y)
+{
+    int map_x;
+    int map_y;
+
+    map_x = (int)x;
+    map_y = (int)y;
+    
+    if (map_x < 0 || map_x >= game->map.width || 
+        map_y < 0 || map_y >= game->map.height)
+        return (1);
+    return (game->map.map[map_y][map_x] == '1');
+}
+
+static int check_collision(t_game *game, double x, double y)
+{
+    double radius;
+    double buffer;
+    int i;
+    double angle;
+    double check_x;
+    double check_y;
+
+    radius = game->player.hitbox_radius;
+    buffer = game->player.wall_buffer;
+    
+    // Check center point first
+    if (is_wall(game, x, y))
+        return (1);
+    
+    // Check points around the circle
+    i = 0;
+    while (i < 8)
+    {
+        angle = i * M_PI / 4;
+        check_x = x + (radius + buffer) * cos(angle);
+        check_y = y + (radius + buffer) * sin(angle);
+        
+        if (is_wall(game, check_x, check_y))
+            return (1);
+        i++;
+    }
+    return (0);
+}
+
+static void try_slide_movement(t_game *game, double move_x, double move_y)
+{
+    double slide_x;
+    double slide_y;
+    double slide_factor;
+    
+    // Try original movement first
+    if (!check_collision(game, game->player.x + move_x, game->player.y + move_y))
+    {
+        game->player.x += move_x;
+        game->player.y += move_y;
+        return;
+    }
+
+    // Try sliding with reduced speed along walls
+    slide_factor = 0.8;  // Reduce speed when sliding
+    
+    // Try X movement
+    slide_x = move_x * slide_factor;
+    if (!check_collision(game, game->player.x + slide_x, game->player.y))
+        game->player.x += slide_x;
+
+    // Try Y movement
+    slide_y = move_y * slide_factor;
+    if (!check_collision(game, game->player.x, game->player.y + slide_y))
+        game->player.y += slide_y;
+}
+
+static void handle_movement(t_game *game)
+{
+    double move_x;
+    double move_y;
+
+    // Calculate movement vector based on input
+    move_x = 0;
+    move_y = 0;
+
+    // Forward/Backward movement
+    if (game->player.move_w)
+    {
+        move_x += game->player.dir_x * MOVE_SPEED;
+        move_y += game->player.dir_y * MOVE_SPEED;
+    }
+    if (game->player.move_s)
+    {
+        move_x -= game->player.dir_x * MOVE_SPEED;
+        move_y -= game->player.dir_y * MOVE_SPEED;
+    }
+
+    // Strafe movement
+    if (game->player.move_a)
+    {
+        move_x += game->player.plane_x * -MOVE_SPEED;
+        move_y += game->player.plane_y * -MOVE_SPEED;
+    }
+    if (game->player.move_d)
+    {
+        move_x += game->player.plane_x * MOVE_SPEED;
+        move_y += game->player.plane_y * MOVE_SPEED;
+    }
+
+    // Apply movement with sliding
+    if (move_x != 0 || move_y != 0)
+        try_slide_movement(game, move_x, move_y);
+}
+
+static void handle_rotation(t_game *game)
+{
+    double old_dir_x;
+    double old_plane_x;
+    double rot_speed;
+
+    if (!game->player.rot_left && !game->player.rot_right)
+        return;
+
+    rot_speed = ROT_SPEED * (game->player.rot_left ? -1 : 1);
+    
+    old_dir_x = game->player.dir_x;
+    game->player.dir_x = game->player.dir_x * cos(rot_speed) - 
+                        game->player.dir_y * sin(rot_speed);
+    game->player.dir_y = old_dir_x * sin(rot_speed) + 
+                        game->player.dir_y * cos(rot_speed);
+    
+    old_plane_x = game->player.plane_x;
+    game->player.plane_x = game->player.plane_x * cos(rot_speed) - 
+                          game->player.plane_y * sin(rot_speed);
+    game->player.plane_y = old_plane_x * sin(rot_speed) + 
+                          game->player.plane_y * cos(rot_speed);
+}
+
+void move_player(t_game *game)
+{
+    handle_movement(game);
+    handle_rotation(game);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   raycast.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/18 15:51:54 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/19 15:52:11 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../includes/cube3d.h"
+
+void	init_dda(t_ray *ray)
+{
+	ray->delta_dist_x = fabs(1.0 / ray->dir_x); // Calculate delta distances
+	ray->delta_dist_y = fabs(1.0 / ray->dir_y);
+	ray->map_x = (int)ray->pos_x; // Calculate step and initial side_dist
+	ray->map_y = (int)ray->pos_y;
+	if (ray->dir_x < 0)
+	{
+		ray->step_x = -1;
+		ray->side_dist_x = (ray->pos_x - ray->map_x) * ray->delta_dist_x;
+	}
+	else
+	{
+		ray->step_x = 1;
+		ray->side_dist_x = (ray->map_x + 1.0 - ray->pos_x) * ray->delta_dist_x;
+	}
+	if (ray->dir_y < 0)
+	{
+		ray->step_y = -1;
+		ray->side_dist_y = (ray->pos_y - ray->map_y) * ray->delta_dist_y;
+	}
+	else
+	{
+		ray->step_y = 1;
+		ray->side_dist_y = (ray->map_y + 1.0 - ray->pos_y) * ray->delta_dist_y;
+	}
+}
+
+static void	update_ray_position(t_ray *ray)
+{
+	if (ray->side_dist_x < ray->side_dist_y)
+	{
+		ray->side_dist_x += ray->delta_dist_x;
+		ray->map_x += ray->step_x;
+		ray->side = 0;
+	}
+	else
+	{
+		ray->side_dist_y += ray->delta_dist_y;
+		ray->map_y += ray->step_y;
+		ray->side = 1;
+	}
+}
+
+static void	calculate_wall_distance(t_ray *ray)
+{
+	if (ray->side == 0)
+		ray->perp_wall_dist = (ray->map_x - ray->pos_x + (1 - ray->step_x) / 2)
+			/ ray->dir_x;
+	else
+		ray->perp_wall_dist = (ray->map_y - ray->pos_y + (1 - ray->step_y) / 2)
+			/ ray->dir_y;
+}
+
+void	perform_dda(t_ray *ray, t_game *game)
+{
+	ray->hit = 0;
+	while (ray->hit == 0)
+	{
+		// Check if we're completely out of bounds
+		if (ray->map_x < 0 || ray->map_x >= game->map.width || 
+			ray->map_y < 0 || ray->map_y >= game->map.height)
+		{
+			ray->hit = 1;
+			ray->perp_wall_dist = 100.0; // Set a large distance for out-of-bounds
+			return;
+		}
+
+		update_ray_position(ray);
+
+		// Check if we hit a wall
+		if (ray->map_x >= 0 && ray->map_x < game->map.width && 
+			ray->map_y >= 0 && ray->map_y < game->map.height)
+		{
+			if (game->map.map[ray->map_y][ray->map_x] == '1')
+				ray->hit = 1;
+		}
+		else
+		{
+			ray->hit = 1;
+			ray->perp_wall_dist = 100.0; // Set a large distance for out-of-bounds
+			return;
+		}
+	}
+	calculate_wall_distance(ray);
+}
+
+void	calculate_ray_dir(t_ray *ray, t_player *player, double camera_x)
+{
+	// Calculate ray direction
+	ray->dir_x = player->dir_x + player->plane_x * camera_x;
+	ray->dir_y = player->dir_y + player->plane_y * camera_x;
+	// Set ray starting position
+	ray->pos_x = player->x;
+	ray->pos_y = player->y;
+}
+
+void	cast_rays(t_game *game)
+{
+	t_ray   ray;
+	int     x;
+	double  camera_x;
+	double  camera_factor;
+
+	camera_factor = 2.0 / (double)(WINDOW_WIDTH / 2);
+
+	// First pass: 2D view rays
+	x = 0;
+	while (x < WINDOW_WIDTH / 2)
+	{
+		camera_x = x * camera_factor - 1.0;
+		calculate_ray_dir(&ray, &game->player, camera_x);
+		init_dda(&ray);
+		perform_dda(&ray, game);
+		
+		// Only draw rays that hit valid walls
+		if (ray.perp_wall_dist < 100.0)
+			draw_ray_2d(game, &ray);
+		x++;
+	}
+
+	// Second pass: 3D view rays
+	x = 0;
+	while (x < WINDOW_WIDTH / 2)
+	{
+		camera_x = x * camera_factor - 1.0;
+		calculate_ray_dir(&ray, &game->player, camera_x);
+		init_dda(&ray);
+		perform_dda(&ray, game);
+
+		// Only draw walls that are in valid range
+		if (ray.perp_wall_dist < 100.0)
+			draw_3d_view(game, &ray, x);
+		x++;
+	}
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   texture_loader.c                                   :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/20 20:49:14 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/20 20:52:28 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../includes/cube3d.h"
+
+/*
+static void init_texture(t_texture *tex, void *mlx, char *path)
+{
+    printf("Loading texture from path: %s\n", path);
+    tex->img = mlx_xpm_file_to_image(mlx, path, &tex->width, &tex->height);
+    if (!tex->img)
+        error_exit("Failed to load texture");
+    tex->addr = mlx_get_data_addr(tex->img, &tex->bits_per_pixel,
+        &tex->line_length, &tex->endian);
+    if (!tex->addr)
+        error_exit("Failed to get texture address");
+}
+*/
+
+void    load_textures(t_game *game)
+{
+    printf("Debug - Texture paths:\n");
+    printf("North: %s\n", game->north_texture);
+    printf("South: %s\n", game->south_texture);
+    printf("West: %s\n", game->west_texture);
+    printf("East: %s\n", game->east_texture);
+    printf("Floor: %s (Use texture: %d)\n", game->floor_texture, game->use_texture_floor);
+    printf("Ceiling: %s (Use texture: %d)\n", game->ceiling_texture, game->use_texture_ceiling);
+
+    if (!game->north_texture || !game->south_texture || 
+        !game->west_texture || !game->east_texture)
+        error_exit("Missing wall texture path");
+
+    // Load and verify wall textures
+    game->textures[TEX_NORTH].img = mlx_xpm_file_to_image(game->mlx, 
+        game->north_texture, 
+        &game->textures[TEX_NORTH].width, 
+        &game->textures[TEX_NORTH].height);
+    if (!game->textures[TEX_NORTH].img || 
+        game->textures[TEX_NORTH].width != TEX_WIDTH || 
+        game->textures[TEX_NORTH].height != TEX_HEIGHT)
+        error_exit("North texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+
+    game->textures[TEX_SOUTH].img = mlx_xpm_file_to_image(game->mlx, 
+        game->south_texture, 
+        &game->textures[TEX_SOUTH].width, 
+        &game->textures[TEX_SOUTH].height);
+    if (!game->textures[TEX_SOUTH].img || 
+        game->textures[TEX_SOUTH].width != TEX_WIDTH || 
+        game->textures[TEX_SOUTH].height != TEX_HEIGHT)
+        error_exit("South texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+
+    game->textures[TEX_EAST].img = mlx_xpm_file_to_image(game->mlx, 
+        game->east_texture, 
+        &game->textures[TEX_EAST].width, 
+        &game->textures[TEX_EAST].height);
+    if (!game->textures[TEX_EAST].img || 
+        game->textures[TEX_EAST].width != TEX_WIDTH || 
+        game->textures[TEX_EAST].height != TEX_HEIGHT)
+        error_exit("East texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+
+    game->textures[TEX_WEST].img = mlx_xpm_file_to_image(game->mlx, 
+        game->west_texture, 
+        &game->textures[TEX_WEST].width, 
+        &game->textures[TEX_WEST].height);
+    if (!game->textures[TEX_WEST].img || 
+        game->textures[TEX_WEST].width != TEX_WIDTH || 
+        game->textures[TEX_WEST].height != TEX_HEIGHT)
+        error_exit("West texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+
+    // Get data addresses for all wall textures
+    game->textures[TEX_NORTH].addr = mlx_get_data_addr(game->textures[TEX_NORTH].img,
+        &game->textures[TEX_NORTH].bits_per_pixel,
+        &game->textures[TEX_NORTH].line_length,
+        &game->textures[TEX_NORTH].endian);
+    if (!game->textures[TEX_NORTH].addr)
+        error_exit("Failed to get North texture address");
+
+    game->textures[TEX_SOUTH].addr = mlx_get_data_addr(game->textures[TEX_SOUTH].img,
+        &game->textures[TEX_SOUTH].bits_per_pixel,
+        &game->textures[TEX_SOUTH].line_length,
+        &game->textures[TEX_SOUTH].endian);
+    if (!game->textures[TEX_SOUTH].addr)
+        error_exit("Failed to get South texture address");
+
+    game->textures[TEX_EAST].addr = mlx_get_data_addr(game->textures[TEX_EAST].img,
+        &game->textures[TEX_EAST].bits_per_pixel,
+        &game->textures[TEX_EAST].line_length,
+        &game->textures[TEX_EAST].endian);
+    if (!game->textures[TEX_EAST].addr)
+        error_exit("Failed to get East texture address");
+
+    game->textures[TEX_WEST].addr = mlx_get_data_addr(game->textures[TEX_WEST].img,
+        &game->textures[TEX_WEST].bits_per_pixel,
+        &game->textures[TEX_WEST].line_length,
+        &game->textures[TEX_WEST].endian);
+    if (!game->textures[TEX_WEST].addr)
+        error_exit("Failed to get West texture address");
+
+    // Load optional floor and ceiling textures if enabled
+    if (game->use_texture_floor)
+    {
+        if (!game->floor_texture)
+            error_exit("Floor texture enabled but no path specified");
+        game->textures[TEX_FLOOR].img = mlx_xpm_file_to_image(game->mlx,
+            game->floor_texture,
+            &game->textures[TEX_FLOOR].width,
+            &game->textures[TEX_FLOOR].height);
+        if (!game->textures[TEX_FLOOR].img || 
+            game->textures[TEX_FLOOR].width != TEX_WIDTH || 
+            game->textures[TEX_FLOOR].height != TEX_HEIGHT)
+            error_exit("Floor texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+        game->textures[TEX_FLOOR].addr = mlx_get_data_addr(game->textures[TEX_FLOOR].img,
+            &game->textures[TEX_FLOOR].bits_per_pixel,
+            &game->textures[TEX_FLOOR].line_length,
+            &game->textures[TEX_FLOOR].endian);
+        if (!game->textures[TEX_FLOOR].addr)
+            error_exit("Failed to get Floor texture address");
+    }
+
+    if (game->use_texture_ceiling)
+    {
+        if (!game->ceiling_texture)
+            error_exit("Ceiling texture enabled but no path specified");
+        game->textures[TEX_CEIL].img = mlx_xpm_file_to_image(game->mlx,
+            game->ceiling_texture,
+            &game->textures[TEX_CEIL].width,
+            &game->textures[TEX_CEIL].height);
+        if (!game->textures[TEX_CEIL].img || 
+            game->textures[TEX_CEIL].width != TEX_WIDTH || 
+            game->textures[TEX_CEIL].height != TEX_HEIGHT)
+            error_exit("Ceiling texture dimensions must be TEX_WIDTH x TEX_HEIGHT");
+        game->textures[TEX_CEIL].addr = mlx_get_data_addr(game->textures[TEX_CEIL].img,
+            &game->textures[TEX_CEIL].bits_per_pixel,
+            &game->textures[TEX_CEIL].line_length,
+            &game->textures[TEX_CEIL].endian);
+        if (!game->textures[TEX_CEIL].addr)
+            error_exit("Failed to get Ceiling texture address");
+    }
+}
+
+unsigned int get_texture_color(t_texture *tex, int x, int y)
+{
+    char    *pixel;
+    int     offset;
+
+    // Ensure coordinates are within bounds using clamping
+    x = (x < 0) ? 0 : x;
+    x = (x >= tex->width) ? tex->width - 1 : x;
+    y = (y < 0) ? 0 : y;
+    y = (y >= tex->height) ? tex->height - 1 : y;
+    
+    // Calculate pixel offset with bounds checking
+    offset = (y * tex->line_length + x * (tex->bits_per_pixel / 8));
+    if (offset < 0 || offset >= tex->line_length * tex->height)
+        return (0);  // Return black for invalid offsets
+        
+    pixel = tex->addr + offset;
+    return (*(unsigned int *)pixel);
+} /* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   exit_handler.c                                     :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/17 22:43:33 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/19 15:37:42 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../includes/cube3d.h"
+
+static void	cleanup_map(t_game *game)
+{
+	int	i;
+
+	if (game->map.map)
+	{
+		i = 0;
+		while (i < game->map.height)
+		{
+			free(game->map.map[i]);
+			i++;
+		}
+		free(game->map.map);
+	}
+}
+
+static void	cleanup_textures(t_game *game)
+{
+	if (game->north_texture)
+		free(game->north_texture);
+	if (game->south_texture)
+		free(game->south_texture);
+	if (game->west_texture)
+		free(game->west_texture);
+	if (game->east_texture)
+		free(game->east_texture);
+}
+
+static void	cleanup_mlx(t_game *game)
+{
+	if (game->img)
+		mlx_destroy_image(game->mlx, game->img);
+	if (game->win)
+		mlx_destroy_window(game->mlx, game->win);
+	if (game->mlx)
+	{
+		free(game->mlx);
+		game->mlx = NULL;
+	}
+}
+
+void	cleanup_game(t_game *game)
+{
+	cleanup_map(game);
+	cleanup_textures(game);
+	cleanup_mlx(game);
+}
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   key_handler.c                                      :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/17 22:43:24 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/19 15:41:02 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../../includes/cube3d.h"
+
+int	key_press(int keycode, t_game *game)
+{
+    if (keycode == KEY_ESC)
+    {
+        cleanup_game(game);
+        exit(0);
+    }
+    if (keycode == KEY_W || keycode == KEY_UP)
+        game->player.move_w = 1;
+    if (keycode == KEY_S || keycode == KEY_DOWN)
+        game->player.move_s = 1;
+    if (keycode == KEY_A)
+        game->player.move_a = 1;
+    if (keycode == KEY_D)
+        game->player.move_d = 1;
+    if (keycode == KEY_LEFT)
+        game->player.rot_left = 1;
+    if (keycode == KEY_RIGHT)
+        game->player.rot_right = 1;
+    return (0);
+}
+
+int	key_release(int keycode, t_game *game)
+{
+    if (keycode == KEY_W || keycode == KEY_UP)
+        game->player.move_w = 0;
+    if (keycode == KEY_S || keycode == KEY_DOWN)
+        game->player.move_s = 0;
+    if (keycode == KEY_A)
+        game->player.move_a = 0;
+    if (keycode == KEY_D)
+        game->player.move_d = 0;
+    if (keycode == KEY_LEFT)
+        game->player.rot_left = 0;
+    if (keycode == KEY_RIGHT)
+        game->player.rot_right = 0;
+    return (0);
+} 
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   draw_walls.c                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/02/20 12:24:30 by iunikel           #+#    #+#             */
+/*   Updated: 2025/02/20 20:49:27 by iunikel          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include "../includes/cube3d.h"
+
+static t_texture *get_wall_texture(t_game *game, t_ray *ray)
+{
+    if (ray->side == 0)
+    {
+        if (ray->dir_x > 0)
+            return (&game->textures[2]); // East texture
+        return (&game->textures[3]);     // West texture
+    }
+    if (ray->dir_y > 0)
+        return (&game->textures[1]);     // South texture
+    return (&game->textures[0]);         // North texture
+}
+
+static void calculate_wall_x(t_ray *ray, t_player *player)
+{
+    if (ray->side == 0)
+        ray->wall_x = player->y + ray->perp_wall_dist * ray->dir_y;
+    else
+        ray->wall_x = player->x + ray->perp_wall_dist * ray->dir_x;
+    ray->wall_x -= floor(ray->wall_x);
+}
+
+void draw_textured_wall(t_game *game, t_ray *ray, int x)
+{
+    t_texture   *tex;
+    int         tex_x;
+    int         tex_y;
+    int         line_height;
+    int         draw_start;
+    int         draw_end;
+    int         y;
+    double      step;
+    double      tex_pos;
+
+    // Get the appropriate texture based on which wall was hit
+    tex = get_wall_texture(game, ray);
+
+    // Calculate where exactly the wall was hit
+    calculate_wall_x(ray, &game->player);
+
+    // Calculate x coordinate on the texture
+    tex_x = (int)(ray->wall_x * TEX_WIDTH);
+    if ((ray->side == 0 && ray->dir_x > 0) ||
+        (ray->side == 1 && ray->dir_y < 0))
+        tex_x = TEX_WIDTH - tex_x - 1;
+
+    // Calculate the height of the line to draw
+    line_height = (int)(WINDOW_HEIGHT / ray->perp_wall_dist);
+
+    // Calculate lowest and highest pixel to fill in current stripe
+    draw_start = -line_height / 2 + WINDOW_HEIGHT / 2;
+    if (draw_start < 0)
+        draw_start = 0;
+    draw_end = line_height / 2 + WINDOW_HEIGHT / 2;
+    if (draw_end >= WINDOW_HEIGHT)
+        draw_end = WINDOW_HEIGHT - 1;
+
+    // Calculate step for texture coordinate
+    step = 1.0 * TEX_HEIGHT / line_height;
+    // Starting texture coordinate
+    tex_pos = (draw_start - WINDOW_HEIGHT / 2 + line_height / 2) * step;
+
+    // Draw the vertical stripe
+    y = draw_start;
+    while (y < draw_end)
+    {
+        // Cast tex_pos to integer and ensure it stays within bounds
+        tex_y = (int)tex_pos & (TEX_HEIGHT - 1);
+        tex_pos += step;
+
+        // Get color from texture
+        unsigned int color = get_texture_color(tex, tex_x, tex_y);
+
+        // Make sides darker for depth effect
+        if (ray->side == 1)
+            color = (color >> 1) & 8355711;
+
+        // Draw the pixel
+        my_mlx_pixel_put(game, x, y, color);
+        y++;
+    }
+} 

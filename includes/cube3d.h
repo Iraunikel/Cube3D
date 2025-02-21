@@ -150,6 +150,7 @@ typedef struct s_floor_calc
     double  floor_step_y;
     double  floor_x;
     double  floor_y;
+    t_game  *game;    // Add game pointer
 } t_floor_calc;
 
 typedef struct s_wall_data
