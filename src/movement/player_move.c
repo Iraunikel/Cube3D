@@ -6,84 +6,13 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:45 by iunikel           #+#    #+#             */
-/*   Updated: 2025/03/08 11:03:50 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/03/08 11:09:32 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../../includes/cube3d.h"
 
-static int	is_wall(t_game *game, double x, double y)
-{
-    int map_x;
-    int map_y;
-
-    map_x = (int)x;
-    map_y = (int)y;
-    
-    if (map_x < 0 || map_x >= game->map.width || 
-        map_y < 0 || map_y >= game->map.height)
-        return (1);
-    return (game->map.map[map_y][map_x] == '1');
-}
-
-static int check_collision(t_game *game, double x, double y)
-{
-    double radius;
-    double buffer;
-    int i;
-    double angle;
-    double check_x;
-    double check_y;
-
-    radius = game->player.hitbox_radius;
-    buffer = game->player.wall_buffer;
-    
-    // Check center point first
-    if (is_wall(game, x, y))
-        return (1);
-    
-    // Check points around the circle
-    i = 0;
-    while (i < 8)
-    {
-        angle = i * M_PI / 4;
-        check_x = x + (radius + buffer) * cos(angle);
-        check_y = y + (radius + buffer) * sin(angle);
-        
-        if (is_wall(game, check_x, check_y))
-            return (1);
-        i++;
-    }
-    return (0);
-}
-
-static void try_slide_movement(t_game *game, double move_x, double move_y)
-{
-    double slide_x;
-    double slide_y;
-    double slide_factor;
-    
-    // Try original movement first
-    if (!check_collision(game, game->player.x + move_x, game->player.y + move_y))
-    {
-        game->player.x += move_x;
-        game->player.y += move_y;
-        return;
-    }
-
-    // Try sliding with reduced speed along walls
-    slide_factor = 0.8;  // Reduce speed when sliding
-    
-    // Try X movement
-    slide_x = move_x * slide_factor;
-    if (!check_collision(game, game->player.x + slide_x, game->player.y))
-        game->player.x += slide_x;
-
-    // Try Y movement
-    slide_y = move_y * slide_factor;
-    if (!check_collision(game, game->player.x, game->player.y + slide_y))
-        game->player.y += slide_y;
-}
+void	try_slide_movement(t_game *game, double move_x, double move_y);
 
 static void	calculate_movement(t_game *game, double *move_x, double *move_y)
 {
