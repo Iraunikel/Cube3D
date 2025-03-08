@@ -196,5 +196,9 @@ void    init_dda(t_ray *ray);
 void    perform_dda(t_ray *ray, t_game *game);
 void    draw_textured_wall(t_game *game, t_ray *ray, int x);
 
+/* Movement Utils */
+int		is_wall(t_game *game, double x, double y);
+int		check_collision(t_game *game, double x, double y);
+void	try_slide_movement(t_game *game, double move_x, double move_y);
 
 #endif

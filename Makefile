@@ -16,6 +16,7 @@ SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/events/exit_handler.c \
        $(SRC_DIR)/events/key_handler.c \
        $(SRC_DIR)/movement/player_move.c \
+       $(SRC_DIR)/movement/player_move_utils.c \
        $(SRC_DIR)/render/render.c \
        $(SRC_DIR)/raycast/raycast.c \
        $(SRC_DIR)/utils/get_next_line.c \
