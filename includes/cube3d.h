@@ -190,7 +190,7 @@ void    move_player(t_game *game);
 // Raycasting functions
 void    calculate_ray_dir(t_ray *ray, t_player *player, double camera_x);
 void    cast_rays(t_game *game);
-void    draw_ray_2d(t_game *game, t_ray *ray);
+// void    draw_ray_2d(t_game *game, t_ray *ray); // No longer used
 void    draw_3d_view(t_game *game, t_ray *ray, int x);
 void    init_dda(t_ray *ray);
 void    perform_dda(t_ray *ray, t_game *game);

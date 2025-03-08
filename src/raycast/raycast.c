@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/18 15:51:54 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/19 15:52:11 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/03/08 21:24:30 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,26 +116,11 @@ void	cast_rays(t_game *game)
 	double  camera_x;
 	double  camera_factor;
 
-	camera_factor = 2.0 / (double)(WINDOW_WIDTH / 2);
+	camera_factor = 2.0 / (double)(WINDOW_WIDTH);
 
-	// First pass: 2D view rays
+	// Render 3D view for the full screen
 	x = 0;
-	while (x < WINDOW_WIDTH / 2)
-	{
-		camera_x = x * camera_factor - 1.0;
-		calculate_ray_dir(&ray, &game->player, camera_x);
-		init_dda(&ray);
-		perform_dda(&ray, game);
-		
-		// Only draw rays that hit valid walls
-		if (ray.perp_wall_dist < 100.0)
-			draw_ray_2d(game, &ray);
-		x++;
-	}
-
-	// Second pass: 3D view rays
-	x = 0;
-	while (x < WINDOW_WIDTH / 2)
+	while (x < WINDOW_WIDTH)
 	{
 		camera_x = x * camera_factor - 1.0;
 		calculate_ray_dir(&ray, &game->player, camera_x);

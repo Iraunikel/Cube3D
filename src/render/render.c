@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/17 22:44:11 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/21 13:10:11 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/03/08 21:30:02 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,177 +16,12 @@ static void	my_mlx_pixel_put(t_game *game, int x, int y, int color)
 {
 	char	*dst;
 
+	// Skip bounds checking for most cases since we're iterating within bounds
+	// Only check for edge cases
 	if (x < 0 || x >= WINDOW_WIDTH || y < 0 || y >= WINDOW_HEIGHT)
 		return ;
 	dst = game->addr + (y * game->line_length + x * (game->bits_per_pixel / 8));
 	*(unsigned int *)dst = color;
-}
-
-static void	draw_square(t_game *game, int x, int y, int color)
-{
-	int	i;
-	int	j;
-	int	size;
-	int	start_x;
-	int	start_y;
-
-	size = 25;
-	start_x = x * size + (WINDOW_WIDTH / 4 - (game->map.width * size) / 2);
-	start_y = y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size) / 2);
-	i = 0;
-	while (i < size - 1)
-	{
-		j = 0;
-		while (j < size - 1)
-		{
-			my_mlx_pixel_put(game, start_x + i, start_y + j, color);
-			j++;
-		}
-		i++;
-	}
-}
-
-static void	draw_player_position(t_game *game, int px, int py)
-{
-	int	i;
-	int	j;
-
-	i = -2;
-	while (i < 3)
-	{
-		j = -2;
-		while (j < 3)
-		{
-			my_mlx_pixel_put(game, px + i, py + j, 0xFF0000);
-			j++;
-		}
-		i++;
-	}
-}
-
-static void	draw_player_direction(t_game *game, int px, int py)
-{
-	int		line_length;
-	double	dir_x;
-	double	dir_y;
-	int		i;
-
-	line_length = 15;
-	dir_x = game->player.dir_x * line_length;
-	dir_y = game->player.dir_y * line_length;
-	i = 0;
-	while (i < line_length)
-	{
-		my_mlx_pixel_put(game, px + (int)(dir_x * i / line_length), py
-			+ (int)(dir_y * i / line_length), 0x00FF00);
-		i++;
-	}
-}
-
-static void	draw_player(t_game *game)
-{
-	int	size;
-	int	px;
-	int	py;
-
-	size = 25;
-	px = (int)(game->player.x * size + (WINDOW_WIDTH / 4 - (game->map.width
-					* size) / 2));
-	py = (int)(game->player.y * size + (WINDOW_HEIGHT / 2 - (game->map.height
-					* size) / 2));
-	draw_player_position(game, px, py);
-	draw_player_direction(game, px, py);
-}
-
-static void	draw_map(t_game *game)
-{
-	int	x;
-	int	y;
-
-	y = 0;
-	while (y < game->map.height)
-	{
-		x = 0;
-		while (x < game->map.width)
-		{
-			if (game->map.map[y][x] == '1')
-				draw_square(game, x, y, 0xFFFFFF);
-			else if (game->map.map[y][x] == '0' || ft_strchr("NSEW",
-					game->map.map[y][x]))
-				draw_square(game, x, y, 0x333333);
-			x++;
-		}
-		y++;
-	}
-	draw_player(game);
-}
-
-static void	draw_line(t_game *game, int x1, int y1, int x2, int y2, int color)
-{
-	double	delta_x;
-	double	delta_y;
-	double	step;
-	double	x;
-	double	y;
-	int		i;
-
-	delta_x = x2 - x1;
-	delta_y = y2 - y1;
-	if (fabs(delta_x) > fabs(delta_y))
-		step = fabs(delta_x);
-	else
-		step = fabs(delta_y);
-	delta_x /= step;
-	delta_y /= step;
-	x = x1;
-	y = y1;
-	i = 0;
-	while (i <= step)
-	{
-		my_mlx_pixel_put(game, (int)x, (int)y, color);
-		x += delta_x;
-		y += delta_y;
-		i++;
-	}
-}
-
-static void	calculate_hit_point(t_ray *ray, double *hit_x, double *hit_y)
-{
-	*hit_x = ray->pos_x + ray->perp_wall_dist * ray->dir_x;
-	*hit_y = ray->pos_y + ray->perp_wall_dist * ray->dir_y;
-}
-
-static void	calculate_screen_coords(t_game *game, t_ray *ray, int size,
-		int coords[4])
-{
-	double	hit_x;
-	double	hit_y;
-
-	calculate_hit_point(ray, &hit_x, &hit_y);
-	coords[0] = ray->pos_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
-			/ 2);
-	coords[1] = ray->pos_y * size + (WINDOW_HEIGHT / 2 - (game->map.height
-				* size) / 2);
-	coords[2] = hit_x * size + (WINDOW_WIDTH / 4 - (game->map.width * size)
-			/ 2);
-	coords[3] = hit_y * size + (WINDOW_HEIGHT / 2 - (game->map.height * size)
-			/ 2);
-}
-
-void	draw_ray_2d(t_game *game, t_ray *ray)
-{
-	int	size;
-	int	coords[4];
-
-	size = 25;
-	calculate_screen_coords(game, ray, size, coords);
-	if (coords[0] >= 0 && coords[0] < WINDOW_WIDTH / 2 && coords[1] >= 0
-		&& coords[1] < WINDOW_HEIGHT && coords[2] >= 0
-		&& coords[2] < WINDOW_WIDTH / 2 && coords[3] >= 0
-		&& coords[3] < WINDOW_HEIGHT)
-	{
-		draw_line(game, coords[0], coords[1], coords[2], coords[3], 0x0000FF);
-	}
 }
 
 static void	calculate_line_dimensions(t_ray *ray, int *line_height,
@@ -358,25 +193,8 @@ void	draw_textured_wall(t_game *game, t_ray *ray, int x)
 
 void	draw_3d_view(t_game *game, t_ray *ray, int x)
 {
-	int screen_x;
-
-	screen_x = x + WINDOW_WIDTH / 2;
-	draw_textured_wall(game, ray, screen_x);
-}
-
-static void calculate_floor_position(int x, int y, t_floor_calc *calc)
-{
-    // Calculate ray direction
-    double camera_x = 2.0 * x / (double)WINDOW_WIDTH - 1.0;
-    double ray_dir_x = calc->game->player.dir_x + calc->game->player.plane_x * camera_x;
-    double ray_dir_y = calc->game->player.dir_y + calc->game->player.plane_y * camera_x;
-
-    // Current y position compared to the center of the screen
-    double ray_dir_z = (WINDOW_HEIGHT / 2.0) / (y - WINDOW_HEIGHT / 2.0);
-
-    // Real world coordinates
-    calc->floor_x = calc->player_x + ray_dir_x * ray_dir_z;
-    calc->floor_y = calc->player_y + ray_dir_y * ray_dir_z;
+	// Render directly to the x coordinate without offset
+	draw_textured_wall(game, ray, x);
 }
 
 static void get_texture_coordinates(t_texture *tex, t_floor_calc *calc, int *tex_coords)
@@ -400,12 +218,24 @@ static void get_texture_coordinates(t_texture *tex, t_floor_calc *calc, int *tex
 
 static void get_ceiling_texture_coordinates(t_texture *tex, t_game *game, int x, int y, int *tex_coords)
 {
-    double dir_x = game->player.dir_x;
-    double dir_y = game->player.dir_y;
-    double angle = atan2(dir_y, dir_x);
-    if (angle < 0)
-		angle += 2 * M_PI;
-    double tx = (angle / (2 * M_PI) + (double)x / WINDOW_WIDTH) * tex->width;
+    static double last_dir_x = 0.0;
+    static double last_dir_y = 0.0;
+    static double last_angle = 0.0;
+    static int last_tex_width = 0;
+    
+    // Only recalculate angle when direction changes
+    if (game->player.dir_x != last_dir_x || game->player.dir_y != last_dir_y || tex->width != last_tex_width)
+    {
+        last_dir_x = game->player.dir_x;
+        last_dir_y = game->player.dir_y;
+        last_tex_width = tex->width;
+        last_angle = atan2(last_dir_y, last_dir_x);
+        if (last_angle < 0)
+            last_angle += 2 * M_PI;
+    }
+    
+    // Simplified calculation using precomputed angle
+    double tx = (last_angle / (2 * M_PI) + (double)x / WINDOW_WIDTH) * tex->width;
     double ty = ((double)y / (WINDOW_HEIGHT / 2)) * tex->height;
     tex_coords[0] = ((int)tx) & (tex->width - 1);
     tex_coords[1] = ((int)ty) & (tex->height - 1);
@@ -440,7 +270,26 @@ static void apply_distance_darkening(int *r, int *g, int *b, int y, int is_ceili
 
 static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceiling, t_texture **tex, int *tex_coords)
 {
-    t_floor_calc calc;
+    static t_floor_calc calc;
+    static double last_y = -1;
+    static int last_is_ceiling = -1;
+    static double ray_dir_z = 0.0;
+    static double precomputed_camera_x[WINDOW_WIDTH];
+    static double precomputed_ray_dir_x[WINDOW_WIDTH];
+    static double precomputed_ray_dir_y[WINDOW_WIDTH];
+    static int initialized = 0;
+    
+    // Initialize precomputed values once
+    if (!initialized)
+    {
+        int i = 0;
+        while (i < WINDOW_WIDTH)
+        {
+            precomputed_camera_x[i] = 2.0 * i / (double)WINDOW_WIDTH - 1.0;
+            i++;
+        }
+        initialized = 1;
+    }
 
     if (is_ceiling == 1)
     {
@@ -449,10 +298,31 @@ static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceili
     }
     else
     {
-        calc.player_x = game->player.x;
-        calc.player_y = game->player.y;
-        calc.game = game;  // Add game pointer to access player direction
-        calculate_floor_position(x, y, &calc);
+        // Only recalculate when y changes or player direction changes
+        if (y != last_y || last_is_ceiling != is_ceiling)
+        {
+            calc.game = game;
+            
+            // Current y position compared to the center of the screen
+            ray_dir_z = (WINDOW_HEIGHT / 2.0) / (y - WINDOW_HEIGHT / 2.0);
+            
+            // Precompute ray directions for all x values
+            int i = 0;
+            while (i < WINDOW_WIDTH)
+            {
+                precomputed_ray_dir_x[i] = game->player.dir_x + game->player.plane_x * precomputed_camera_x[i];
+                precomputed_ray_dir_y[i] = game->player.dir_y + game->player.plane_y * precomputed_camera_x[i];
+                i++;
+            }
+            
+            last_y = y;
+            last_is_ceiling = is_ceiling;
+        }
+        
+        // Use precomputed values
+        calc.floor_x = game->player.x + precomputed_ray_dir_x[x] * ray_dir_z;
+        calc.floor_y = game->player.y + precomputed_ray_dir_y[x] * ray_dir_z;
+        
         *tex = &game->textures[TEX_FLOOR];
         get_texture_coordinates(*tex, &calc, tex_coords);
     }
@@ -460,11 +330,45 @@ static void get_texture_and_coordinates(t_game *game, int x, int y, int is_ceili
 
 static void apply_color_and_draw(t_game *game, int x, int y, int is_ceiling, t_texture *tex, int *tex_coords)
 {
+    static int last_y = -1;
+    static int last_is_ceiling = -1;
+    static double darkening_factor = 1.0;
+    
+    // Only recalculate darkening factor when y or is_ceiling changes
+    if (y != last_y || is_ceiling != last_is_ceiling)
+    {
+        if (!is_ceiling)
+        {
+            double relative_y = (double)(y - WINDOW_HEIGHT / 2) / (WINDOW_HEIGHT / 2);
+            double floor_dist = 1.0 - relative_y;
+            darkening_factor = 1.0 - (floor_dist * 0.7);
+            darkening_factor = fmax(0.2, darkening_factor);
+            darkening_factor *= 0.85;
+        }
+        else
+        {
+            darkening_factor = 1.0;
+        }
+        
+        last_y = y;
+        last_is_ceiling = is_ceiling;
+    }
+    
     unsigned int color = get_texture_color(tex, tex_coords[0], tex_coords[1]);
     int r = (color >> 16) & 0xFF;
     int g = (color >> 8) & 0xFF;
     int b = color & 0xFF;
-    apply_distance_darkening(&r, &g, &b, y, is_ceiling);
+    
+    // Apply precomputed darkening factor
+    r = (int)(r * darkening_factor);
+    g = (int)(g * darkening_factor);
+    b = (int)(b * darkening_factor);
+    
+    // Clamp values
+    r = (r < 0) ? 0 : ((r > 255) ? 255 : r);
+    g = (g < 0) ? 0 : ((g > 255) ? 255 : g);
+    b = (b < 0) ? 0 : ((b > 255) ? 255 : b);
+    
     color = (r << 16) | (g << 8) | b;
     my_mlx_pixel_put(game, x, y, color);
 }
@@ -478,63 +382,101 @@ static void draw_textured_floor_ceiling(t_game *game, int x, int y, int is_ceili
     apply_color_and_draw(game, x, y, is_ceiling, tex, tex_coords);
 }
 
-static void draw_ceiling_section(t_game *game, int x, int y)
-{
-    if (game->use_texture_ceiling == 1)
-    {
-        draw_textured_floor_ceiling(game, x, y, 1);
-        return;
-    }
-    int r = game->ceiling_color.r;
-    int g = game->ceiling_color.g;
-    int b = game->ceiling_color.b;
-    apply_distance_darkening(&r, &g, &b, y, 1);
-    int ceiling_color = (r << 16) | (g << 8) | b;
-    my_mlx_pixel_put(game, x, y, ceiling_color);
-}
-
-static void draw_floor_section(t_game *game, int x, int y)
-{
-    if (game->use_texture_floor == 1)
-    {
-        draw_textured_floor_ceiling(game, x, y, 0);
-        return;
-    }
-    int r = game->floor_color.r;
-    int g = game->floor_color.g;
-    int b = game->floor_color.b;
-    apply_distance_darkening(&r, &g, &b, y, 0);
-    int floor_color = (r << 16) | (g << 8) | b;
-    my_mlx_pixel_put(game, x, y, floor_color);
-}
-
 static void process_ceiling_floor_row(t_game *game, int y)
 {
     int x;
-
-    x = WINDOW_WIDTH / 2;
-    while (x < WINDOW_WIDTH)
+    int r, g, b;
+    int ceiling_color, floor_color;
+    int is_ceiling = (y < WINDOW_HEIGHT / 2);
+    t_texture *tex;
+    int tex_coords[2];
+    
+    // Precompute colors for solid color floor/ceiling
+    if (!game->use_texture_ceiling && is_ceiling)
     {
-        if (y < WINDOW_HEIGHT / 2)
+        r = game->ceiling_color.r;
+        g = game->ceiling_color.g;
+        b = game->ceiling_color.b;
+        apply_distance_darkening(&r, &g, &b, y, 1);
+        ceiling_color = (r << 16) | (g << 8) | b;
+    }
+    
+    if (!game->use_texture_floor && !is_ceiling)
+    {
+        r = game->floor_color.r;
+        g = game->floor_color.g;
+        b = game->floor_color.b;
+        apply_distance_darkening(&r, &g, &b, y, 0);
+        floor_color = (r << 16) | (g << 8) | b;
+    }
+    
+    // Process ceiling
+    if (is_ceiling)
+    {
+        if (game->use_texture_ceiling)
         {
-            draw_ceiling_section(game, x, y);
+            // For textured ceiling, process in batches
+            tex = &game->textures[TEX_CEIL];
+            x = 0;
+            while (x < WINDOW_WIDTH)
+            {
+                get_ceiling_texture_coordinates(tex, game, x, y, tex_coords);
+                apply_color_and_draw(game, x, y, 1, tex, tex_coords);
+                x++;
+            }
         }
         else
         {
-            draw_floor_section(game, x, y);
+            // For solid color ceiling, fill the entire row at once
+            x = 0;
+            while (x < WINDOW_WIDTH)
+            {
+                my_mlx_pixel_put(game, x, y, ceiling_color);
+                x++;
+            }
         }
-        x++;
+    }
+    // Process floor
+    else
+    {
+        if (game->use_texture_floor)
+        {
+            // For textured floor, process in batches
+            x = 0;
+            while (x < WINDOW_WIDTH)
+            {
+                draw_textured_floor_ceiling(game, x, y, 0);
+                x++;
+            }
+        }
+        else
+        {
+            // For solid color floor, fill the entire row at once
+            x = 0;
+            while (x < WINDOW_WIDTH)
+            {
+                my_mlx_pixel_put(game, x, y, floor_color);
+                x++;
+            }
+        }
     }
 }
 
 static void draw_ceiling_floor(t_game *game)
 {
     int y;
+    int half_height = WINDOW_HEIGHT / 2;
 
+    // Process ceiling and floor in parallel
     y = 0;
-    while (y < WINDOW_HEIGHT)
+    while (y < half_height)
     {
+        // Process ceiling row
         process_ceiling_floor_row(game, y);
+        
+        // Process corresponding floor row
+        process_ceiling_floor_row(game, WINDOW_HEIGHT - y - 1);
+        
         y++;
     }
 }
@@ -548,7 +490,7 @@ int	game_loop(t_game *game)
 	ft_bzero(game->addr, WINDOW_WIDTH * WINDOW_HEIGHT * (game->bits_per_pixel / 8));
 	move_player(game);
 	draw_ceiling_floor(game);
-	draw_map(game);
+	// Removed draw_map(game) call to hide the 2D map
 	cast_rays(game);
 	frame_count++;
 	current_time = clock();

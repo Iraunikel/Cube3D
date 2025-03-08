@@ -6,7 +6,7 @@
 /*   By: iunikel <marvin@student.42.fr>             +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/02/20 20:49:14 by iunikel           #+#    #+#             */
-/*   Updated: 2025/02/20 20:52:28 by iunikel          ###   ########.fr       */
+/*   Updated: 2025/03/08 21:30:30 by iunikel          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -151,19 +151,12 @@ void    load_textures(t_game *game)
 unsigned int get_texture_color(t_texture *tex, int x, int y)
 {
     char    *pixel;
-    int     offset;
-
-    // Ensure coordinates are within bounds using clamping
-    x = (x < 0) ? 0 : x;
-    x = (x >= tex->width) ? tex->width - 1 : x;
-    y = (y < 0) ? 0 : y;
-    y = (y >= tex->height) ? tex->height - 1 : y;
     
-    // Calculate pixel offset with bounds checking
-    offset = (y * tex->line_length + x * (tex->bits_per_pixel / 8));
-    if (offset < 0 || offset >= tex->line_length * tex->height)
-        return (0);  // Return black for invalid offsets
-        
-    pixel = tex->addr + offset;
+    // Use bit masking for faster bounds handling (assumes texture dimensions are powers of 2)
+    x = x & (tex->width - 1);
+    y = y & (tex->height - 1);
+    
+    // Calculate pixel offset directly without additional bounds checking
+    pixel = tex->addr + (y * tex->line_length + x * (tex->bits_per_pixel / 8));
     return (*(unsigned int *)pixel);
 } 
